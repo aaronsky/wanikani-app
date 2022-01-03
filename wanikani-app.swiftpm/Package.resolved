@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "WaniKani",
+        "repositoryURL": "https://github.com/aaronsky/wanikani-swift",
+        "state": {
+          "branch": "main",
+          "revision": "0582746c52dd41750bb2131915d967602c104f79",
+          "version": null
+        }
+      }
+    ]
+  },
+  "version": 1
+}

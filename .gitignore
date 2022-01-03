@@ -1,0 +1,7 @@
+.DS_Store
+/.build
+/wanikani-app.swiftpm/.build
+/Packages
+/*.xcodeproj
+xcuserdata/
+DerivedData/
