@@ -176,7 +176,7 @@ struct LessonsReviewsCard: View {
     @EnvironmentObject private var services: Services
     @EnvironmentObject private var subjects: SubjectsStore
 
-    let rows = Array(repeating: GridItem(.fixed(40)), count: 4)
+    let columns = Array(repeating: GridItem(.adaptive(minimum: 40)), count: 4)
 
     var kind: Kind
     var summary: Summary?
@@ -227,28 +227,27 @@ struct LessonsReviewsCard: View {
             }
     }
 
-    var nextTenLessons: [Subject] {
+    var nextLessons: [Subject] {
         subjectIDs
-            .prefix(10)
+            .prefix(8)
             .compactMap { subjects[$0] }
     }
 
     var body: some View {
         HStack {
-            VStack {
+            VStack(alignment: .leading) {
                 Text("\(subjectIDs.count) in the queue")
                     .font(.subheadline.bold())
                 Spacer()
                 if showUpcoming {
-                    LazyHGrid(rows: rows, spacing: 10) {
-                        ForEach(nextTenLessons, id: \.self) { subject in
-                            SubjectTile(subject: subject)
-                        }
-                    }
+                    Text("Here's what's coming up next:")
+                        .font(.caption)
+                    SubjectTileGrid(columns: columns,
+                                    subjects: nextLessons)
                 }
             }
             Spacer()
-            VStack {
+            VStack(alignment: .trailing) {
                 Text("\(radicals.count) radicals")
                     .foregroundColor(Color("Radical"))
                 Text("\(kanji.count) kanji")

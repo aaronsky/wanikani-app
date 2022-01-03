@@ -25,6 +25,7 @@ struct SubjectTile: View {
         Text(characters)
             .padding(4)
             .background(kind.color)
+            .shadow(radius: 3, y: 1)
     }
 
     @ViewBuilder
@@ -32,6 +33,46 @@ struct SubjectTile: View {
         AsyncImage(url: url)
             .padding(4)
             .background(kind.color)
+            .shadow(radius: 3, y: 1)
+    }
+}
+
+struct SubjectTileGrid: View {
+    var columns: [GridItem]
+    var subjects: [Subject]
+    var limit: Int?
+
+    var nextSubjects: (subjects: ArraySlice<Subject>, showMoreTile: Bool) {
+        if let limit = limit {
+            if limit < subjects.count {
+                return (subjects.prefix(limit - 1), true)
+            } else {
+                return (subjects.prefix(limit), false)
+            }
+        }
+
+        return (subjects[...], false)
+    }
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 5) {
+            let (subjects, showMoreTile) = nextSubjects
+            ForEach(subjects, id: \.self) { subject in
+                SubjectTile(subject: subject)
+            }
+            if showMoreTile {
+                OverflowTile()
+            }
+        }
+    }
+
+    struct OverflowTile: View {
+        var body: some View {
+            Text("...")
+                .padding(4)
+                .background(Color(.systemGray3))
+                .shadow(radius: 3, y: 1)
+        }
     }
 }
 
