@@ -1,10 +1,18 @@
 import SwiftUI
 
-struct ColorfulProgressViewStyle: ProgressViewStyle {
-    var accentColor: Color = Color.accentColor
-    var primaryColor: Color = Color(.systemGray4)
+public struct ColorfulProgressViewStyle: ProgressViewStyle {
+    public var accentColor: Color
+    public var primaryColor: Color
 
-    func makeBody(configuration: Configuration) -> some View {
+    public init(
+        accentColor: Color = Color.accentColor,
+        primaryColor: Color = Color(.systemGray4)
+    ) {
+        self.accentColor = accentColor
+        self.primaryColor = primaryColor
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
         GeometryReader { proxy in
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 12)
