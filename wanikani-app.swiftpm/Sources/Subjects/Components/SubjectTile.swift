@@ -34,10 +34,20 @@ public struct SubjectTile: View {
     }
 }
 
-struct SubjectTileGrid: View {
-    var columns: [GridItem]
-    var subjects: [Subject]
-    var limit: Int?
+public struct SubjectTileGrid: View {
+    public var columns: [GridItem]
+    public var subjects: [Subject]
+    public var limit: Int?
+
+    public init(
+        columns: [GridItem],
+        subjects: [Subject],
+        limit: Int? = nil
+    ) {
+        self.columns = columns
+        self.subjects = subjects
+        self.limit = limit
+    }
 
     var nextSubjects: (subjects: ArraySlice<Subject>, showMoreTile: Bool) {
         if let limit = limit {
@@ -50,7 +60,7 @@ struct SubjectTileGrid: View {
         return (subjects[...], false)
     }
 
-    var body: some View {
+    public var body: some View {
         LazyVGrid(columns: columns, spacing: 5) {
             let (subjects, showMoreTile) = nextSubjects
             ForEach(subjects, id: \.self) {

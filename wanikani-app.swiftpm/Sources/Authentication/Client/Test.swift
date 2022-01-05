@@ -7,9 +7,7 @@ import WaniKaniHelpers
             login: { _, _ in
                 Effect(value: AuthenticationResponse(user: .testing))
             },
-            logout: {
-                Effect(value: ())
-            }
+            logout: .none
         )
     }
 #endif

@@ -16,9 +16,11 @@ public enum AppState: Equatable {
 }
 
 public enum AppAction: Equatable {
+    case onAppear
     case login(LoginAction)
     case home(HomeAction)
     case scenePhaseChanged(ScenePhase)
+    case openURL(URL)
 }
 
 public struct AppEnvironment {
@@ -66,18 +68,31 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>
         ),
         Reducer { state, action, environment in
             switch action {
+            case .onAppear:
+                return environment.authenticationClient
+                    .login(
+                        .init(token: nil, storeValidTokenInKeychain: false),
+                        environment.wanikaniClient
+                    )
+                    .receive(on: environment.mainQueue)
+                    .catchToEffect {
+                        AppAction.login(.loginResponse($0.mapError { $0 as! AuthenticationError }))
+                    }
             case .login(.loginResponse(.success(let response))):
                 state = .home(HomeState(user: response.user))
-                //                environment.subjects.load(SubjectsLoadRequest(url: ))
-                return .none
+                return environment.subjects
+                    .update(environment.wanikaniClient)
+                    .fireAndForget()
             case .login:
                 return .none
             case .home:
                 return .none
             case .scenePhaseChanged(.background):
-                //                environment.subjects.save(SubjectsSaveRequest(subjects: , url: ))
-                return .none
+                return environment.subjects.save.fireAndForget()
             case .scenePhaseChanged:
+                return .none
+            case .openURL:
+                // TODO: routing
                 return .none
             }
         }
@@ -108,123 +123,3 @@ public struct AppView: View {
         }
     }
 }
-
-// public struct AppView: View {
-//    @Environment(\.scenePhase) private var scenePhase
-//
-//    var body: some View {
-//        NavigationView {
-//            Switch(viewModel.authentication.$state) {
-//                CaseLet(/AuthenticationStore.State.unknown) {
-//                    ProgressView()
-//                }
-//                CaseLet(/AuthenticationStore.State.notAuthenticated) {
-//                    LoginView(
-//                        onLogin: viewModel.login,
-//                        onLogout: viewModel.authentication.logout
-//                    )
-//                }
-//                CaseLet(/AuthenticationStore.State.authenticated) { $user in
-//                    HomeView(
-//                        viewModel: HomeViewModel(
-//                            client: viewModel.wanikaniClient,
-//                            subjects: viewModel.subjects,
-//                            user: $user
-//                        )
-//                    )
-//                        .toolbar(content: toolbar)
-//                        .sheet(isPresented: $showProfileScreen) {
-//                            ProfileView(
-//                                viewModel: ProfileViewModel(
-//                                    client: viewModel.wanikaniClient,
-//                                    user: $viewModel.user
-//                                )
-//                            )
-//                        }
-//                }
-//            }
-//        }
-//        .onOpenURL { url in
-//            viewModel.open(url: url)
-//        }
-//        .task {
-//            try! await viewModel.loadSubjectsFromDisk()
-//        }
-//        .task {
-//            try? await viewModel.login()
-//        }
-//        .onChange(of: scenePhase) { phase in
-//            guard phase == .inactive else {
-//                return
-//            }
-//
-//            Task {
-//                await viewModel.prepareForBackground()
-//            }
-//        }
-//    }
-//
-//    @ToolbarContentBuilder
-//    func toolbar() -> some ToolbarContent {
-//        ToolbarItem(placement: .navigationBarLeading) {
-//            Button(
-//                action: {
-//                    showProfileScreen = true
-//                },
-//                label: {
-//                    Label("Profile", systemImage: "gear")
-//                }
-//            )
-//        }
-//    }
-// }
-//
-// @MainActor
-// class AppViewModel: ObservableObject {
-//    @Published var authentication: AuthenticationStore
-//    @Published var subjects: SubjectsStore
-//    @Published var user: User?
-//
-//    let wanikaniClient: WaniKani
-//    let urlSession: URLSession
-//
-//    var authCancellables: Set<AnyCancellable> = []
-//
-//    init(
-//        wanikaniClient: WaniKani? = nil,
-//        urlSession: URLSession = .init(configuration: .default),
-//        authentication: AuthenticationStore = .init(),
-//        subjects: SubjectsStore = .init()
-//    ) {
-//        self.wanikaniClient = wanikaniClient ?? WaniKani(transport: urlSession)
-//        self.urlSession = urlSession
-//        self.authentication = authentication
-//        self.subjects = subjects
-//
-//        authentication.$state
-//            .filter { $0 == .authenticated }
-//            .removeDuplicates()
-//            .sink { [unowned self] _ in
-//                Task.detached(priority: .background) {
-//                    try! await self.subjects.reloadIfNeeded(client: self.wanikaniClient)
-//                }
-//            }
-//            .store(in: &authCancellables)
-//    }
-//
-//    func loadSubjectsFromDisk() async throws {
-//        try await subjects.loadPersistentStore(session: urlSession)
-//    }
-//
-//    func prepareForBackground() async {
-//        try? subjects.save()
-//    }
-//
-//    func login(_ token: String? = nil) async throws {
-//        let user = try await authentication.login(token, client: wanikaniClient)
-//        self.user = user
-//    }
-//
-//    func open(url: URL) {
-//    }
-// }

@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import SwiftUI
 import WaniKani
+import WaniKaniHelpers
 
 public struct ProfileState: Equatable {
     var username: String
@@ -8,6 +9,8 @@ public struct ProfileState: Equatable {
     var userOnVacation: Bool
     var userSubscriptionType: User.Subscription.Kind
     var userStarted: Date
+    var voiceActors: [VoiceActor] = []
+    var updateRequestInFlight: Bool = false
 
     @BindableState var defaultVoiceActorID: Int
     @BindableState var lessonsAutoplayAudio: Bool
@@ -15,7 +18,6 @@ public struct ProfileState: Equatable {
     @BindableState var lessonsPresentationOrder: User.Preferences.PresentationOrder
     @BindableState var reviewsAutoplayAudio: Bool
     @BindableState var reviewsDisplaySRSIndicator: Bool
-    @BindableState var voiceActors: [VoiceActor] = []
 
     public init(
         user: User
@@ -36,8 +38,25 @@ public struct ProfileState: Equatable {
 }
 
 public enum ProfileAction: BindableAction, Equatable {
+    case onAppear
     case binding(BindingAction<ProfileState>)
-    //    case updateUserResponse(Result<User, Error>)
+    case getVoiceActorsResponse(Result<Response<VoiceActors.List>, Error>)
+    case updateUserResponse(Result<Response<Users.Update>, Error>)
+
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case (.onAppear, .onAppear),
+            (.getVoiceActorsResponse(.success), .getVoiceActorsResponse(.success)),
+            (.getVoiceActorsResponse(.failure), .getVoiceActorsResponse(.failure)),
+            (.updateUserResponse(.success), .updateUserResponse(.success)),
+            (.updateUserResponse(.failure), .updateUserResponse(.failure)):
+            return true
+        case (.binding(let a), .binding(let b)):
+            return a == b
+        default:
+            return false
+        }
+    }
 }
 
 public struct ProfileEnvironment {
@@ -55,24 +74,64 @@ public struct ProfileEnvironment {
 
 public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironment> { state, action, environment in
     switch action {
+    case .onAppear:
+        return environment.wanikaniClient
+            .send(.voiceActors())
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.getVoiceActorsResponse)
+    case .getVoiceActorsResponse(.success(let response)):
+        state.voiceActors = Array(response.data)
+        return .none
+    case .getVoiceActorsResponse:
+        // TODO: alerting
+        return .none
     case .binding(\.$defaultVoiceActorID):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(defaultVoiceActorID: state.defaultVoiceActorID))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsAutoplayAudio):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(lessonsAutoplayAudio: state.lessonsAutoplayAudio))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsBatchSize):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(lessonsBatchSize: state.lessonsBatchSize))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsPresentationOrder):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(lessonsPresentationOrder: state.lessonsPresentationOrder.rawValue))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$reviewsAutoplayAudio):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(reviewsAutoplayAudio: state.reviewsAutoplayAudio))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$reviewsDisplaySRSIndicator):
-        return .none
+        state.updateRequestInFlight = true
+        return environment.wanikaniClient
+            .send(.updateUser(reviewsDisplaySRSIndicator: state.reviewsDisplaySRSIndicator))
+            .receive(on: environment.mainQueue)
+            .catchToEffect(ProfileAction.updateUserResponse)
     case .binding:
         return .none
-    //    case .updateUserResponse(.success(let user)):
-    //        return .none
-    //    case .updateUserResponse(.failure(let error)):
-    //        return .none
+    case .updateUserResponse(.success(let response)):
+        // TODO: green checkmark for updated property
+        // TODO: update user used across app
+        state.updateRequestInFlight = false
+        return .none
+    case .updateUserResponse:
+        // TODO: alerting
+        state.updateRequestInFlight = false
+        return .none
     }
 }
 .binding()
@@ -95,14 +154,15 @@ public struct ProfileView: View {
                         "\(viewStore.userSubscriptionType.rawValue.capitalized) member since \(viewStore.userStarted.formatted(.dateTime.month().year()))"
                     )
                 }
-                //                Section {
-                //                    Picker("Default voice actor", section: viewStore.binding(\.defaultVoiceActorID)) {
-                //                        ForEach(voiceActors) { voiceActor in
-                //                            Text("\(voiceActor.name) (\(voiceActor.description))")
-                //                                .tag(voiceActor.id)
-                //                        }
-                //                    }.disabled(voiceActors.isEmpty)
-                //                }
+                Section {
+                    Picker("Default voice actor", selection: viewStore.binding(\.$defaultVoiceActorID)) {
+                        ForEach(viewStore.voiceActors) { voiceActor in
+                            Text("\(voiceActor.name) (\(voiceActor.description))")
+                                .tag(voiceActor.id)
+                        }
+                    }
+                    .disabled(viewStore.voiceActors.isEmpty)
+                }
                 Section("Lessons") {
                     Toggle("Autoplay audio", isOn: viewStore.binding(\.$lessonsAutoplayAudio))
                     Picker("Batch size", selection: viewStore.binding(\.$lessonsBatchSize)) {
@@ -124,15 +184,12 @@ public struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .onAppear {
+                viewStore.send(.onAppear)
+            }
         }
     }
 }
-//            }
-//        .onAppear(perform: populateDefaultState)
-//        // .handlingErrors(in: viewModel.error, onRequiresLogout: {})
-//        .task {
-//            await viewModel.fetchVoiceActors()
-//        }
 
 extension User.Preferences.PresentationOrder: CaseIterable {
     public static let allCases: [Self] = [
@@ -151,57 +208,6 @@ extension User.Preferences.PresentationOrder: CustomStringConvertible {
             return "Shuffled"
         case .ascendingLevelThenShuffled:
             return "Ascending level, then shuffled"
-        }
-    }
-}
-
-@MainActor class ProfileViewModel: ObservableObject {
-    @Published var error: Error?
-
-    @Published var voiceActors: [VoiceActor] = []
-
-    let client: WaniKani
-    @Binding var user: User?
-
-    init(
-        client: WaniKani,
-        user: Binding<User?>
-    ) {
-        self.client = client
-        self._user = user
-    }
-
-    func fetchVoiceActors() async {
-        do {
-            let response = try await client.send(.voiceActors())
-            voiceActors = Array(response.data)
-        } catch {
-            self.error = error
-        }
-    }
-
-    func updateUserPreferences(
-        defaultVoiceActorID: Int? = nil,
-        lessonsAutoplayAudio: Bool? = nil,
-        lessonsBatchSize: Int? = nil,
-        lessonsPresentationOrder: String? = nil,
-        reviewsAutoplayAudio: Bool? = nil,
-        reviewsDisplaySRSIndicator: Bool? = nil
-    ) async {
-        do {
-            let response = try await client.send(
-                .updateUser(
-                    defaultVoiceActorID: defaultVoiceActorID,
-                    lessonsAutoplayAudio: lessonsAutoplayAudio,
-                    lessonsBatchSize: lessonsBatchSize,
-                    lessonsPresentationOrder: lessonsPresentationOrder,
-                    reviewsAutoplayAudio: reviewsAutoplayAudio,
-                    reviewsDisplaySRSIndicator: reviewsDisplaySRSIndicator
-                )
-            )
-            user = response.data
-        } catch {
-            self.error = error
         }
     }
 }

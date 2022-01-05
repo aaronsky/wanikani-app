@@ -8,6 +8,7 @@ public struct HomeState: Equatable {
     public var user: User
     public var summary: Summary?
     public var assignments: [Assignment] = []
+    public var isLoading: Bool = false
 
     public init(
         user: User
@@ -18,6 +19,7 @@ public struct HomeState: Equatable {
 
 public enum HomeAction: Equatable {
     case onAppear
+    case refresh
     case getSummaryResponse(Result<Response<Summaries.Get>, Error>)
     case getAssignmentsResponse(Result<Response<Assignments.List>, Error>)
     case profileButtonTapped
@@ -53,7 +55,8 @@ public struct HomeEnvironment {
 
 public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment> { state, action, environment in
     switch action {
-    case .onAppear:
+    case .onAppear, .refresh:
+        state.isLoading = true
         return
             Effect.merge(
                 environment.wanikaniClient.send(.summary)
@@ -61,18 +64,19 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment> { state
                 environment.wanikaniClient.send(.assignments(levels: [state.user.level]))
                     .catchToEffect(HomeAction.getAssignmentsResponse)
             )
-            .receive(on: environment.mainQueue).eraseToEffect()
+            .receive(on: environment.mainQueue)
+            .eraseToEffect()
     case .getSummaryResponse(.success(let response)):
         state.summary = response.data
         return .none
     case .getSummaryResponse:
-        // TODO:
+        // TODO: alerting
         return .none
     case .getAssignmentsResponse(.success(let response)):
         state.assignments = Array(response.data)
         return .none
     case .getAssignmentsResponse:
-        // TODO:
+        // TODO: alerting
         return .none
     case .profileButtonTapped:
         return .none
@@ -82,7 +86,6 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment> { state
 }
 
 public struct HomeView: View {
-
     let store: Store<HomeState, HomeAction>
 
     public init(
@@ -105,32 +108,35 @@ public struct HomeView: View {
 
                         LevelProgressionBar(store: store)
                     }
-
                     Text("Coming Up")
                         .font(.title2.bold())
-
                     Section(
                         header: Text("Lessons")
                             .font(.title3.bold())
                     ) {
-                        LessonsReviewsCard(
-                            kind: .lessons  //,
-                                //                            summary: viewStore.summary,
-                                //                            subjects: viewStore.subjects,
-                                //                            showUpcoming: true
-                        )
+                        if let summary = viewStore.summary {
+                            LessonsReviewsCard(
+                                kind: .lessons,
+                                summary: summary,
+                                showUpcoming: true
+                            )
+                        } else if viewStore.isLoading {
+                            ProgressView()
+                        }
                     }
-
                     Section(
                         header: Text("Reviews")
                             .font(.title3.bold())
                     ) {
-                        LessonsReviewsCard(
-                            kind: .reviews  //,
-                                //                            summary: viewStore.summary,
-                                //                            subjects: viewStore.subjects,
-                                //                            showUpcoming: false
-                        )
+                        if let summary = viewStore.summary {
+                            LessonsReviewsCard(
+                                kind: .reviews,
+                                summary: summary,
+                                showUpcoming: false
+                            )
+                        } else if viewStore.isLoading {
+                            ProgressView()
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -165,6 +171,9 @@ public struct HomeView: View {
             .onAppear {
                 viewStore.send(.onAppear)
             }
+            .refreshable {
+                await viewStore.send(.refresh, while: \.isLoading)
+            }
         }
     }
 }
@@ -186,20 +195,3 @@ struct HomeView_Previews: PreviewProvider {
         }
     }
 }
-
-// struct HomeView: View {
-//    @ObservedObject var viewModel: HomeViewModel
-//
-//    var body: some View {
-//        .navigationTitle("Welcome, \(viewModel.user.username)!")
-//        .toolbar(content: toolbar)
-//        .refreshable {
-//            await viewModel.fetchSummary()
-//            await viewModel.fetchAssignments()
-//        }
-//        .taskWithErrorHandling(error: viewModel.error, onRequiresLogout: {}) {
-//            await viewModel.fetchSummary()
-//            await viewModel.fetchAssignments()
-//        }
-//    }
-//

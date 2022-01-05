@@ -60,11 +60,11 @@ public enum AuthenticationError: Equatable, LocalizedError {
 
 public struct AuthenticationClient {
     public var login: (LoginRequest, WaniKani) -> Effect<AuthenticationResponse, Error>
-    public var logout: () -> Effect<Void, Error>
+    public var logout: Effect<Void, Error>
 
     public init(
         login: @escaping (LoginRequest, WaniKani) -> Effect<AuthenticationResponse, Error>,
-        logout: @escaping () -> Effect<Void, Error>
+        logout: Effect<Void, Error>
     ) {
         self.login = login
         self.logout = logout

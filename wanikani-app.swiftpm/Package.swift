@@ -47,6 +47,7 @@ let package = Package(
                 "Login", 
                 "Home",
                 "Subjects",
+                "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "SwiftUINavigation", package: "swiftui-navigation"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
