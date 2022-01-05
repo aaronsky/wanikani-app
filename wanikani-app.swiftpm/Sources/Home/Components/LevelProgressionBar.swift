@@ -95,3 +95,19 @@ struct LevelProgressionBar: View {
         return "Pass \(remaining) more radicals to unlock more kanji"
     }
 }
+
+struct LevelProgressionBar_Previews: PreviewProvider {
+    static var previews: some View {
+        LevelProgressionBar(
+            store: Store(
+                initialState: .init(user: .testing),
+                reducer: homeReducer,
+                environment: .init(
+                    wanikaniClient: .init(),
+                    subjects: .testing,
+                    mainQueue: .main
+                )
+            )
+        )
+    }
+}

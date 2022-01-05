@@ -13,9 +13,9 @@ public struct SubjectTile: View {
             } else {
                 imageTile(url: radical.characterImages.first!.url, kind: .radical)
             }
-        case .kanji(let kanji): textTile(characters: kanji.characters!, kind: .kanji)
+        case .kanji(let kanji): textTile(characters: kanji.characters, kind: .kanji)
         case .vocabulary(let vocabulary):
-            textTile(characters: vocabulary.characters!, kind: .vocabulary)
+            textTile(characters: vocabulary.characters, kind: .vocabulary)
         }
     }
 
@@ -92,5 +92,56 @@ extension Subject.Kind {
         case .vocabulary:
             return .vocabulary
         }
+    }
+}
+
+struct SubjectTile_Previews: PreviewProvider {
+    static var previews: some View {
+        SubjectTile(subject: .radical(.testing))
+        SubjectTile(subject: .kanji(.testing))
+        SubjectTile(subject: .vocabulary(.testing))
+    }
+}
+
+struct SubjectTileGrid_Previews: PreviewProvider {
+    static let columns: [GridItem] = []
+    static var previews: some View {
+        SubjectTileGrid(
+            columns: columns,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+                .radical(.testing),
+            ]
+        )
+        SubjectTileGrid(
+            columns: columns,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+                .radical(.testing),
+                .kanji(.testing),
+            ],
+            limit: 5
+        )
+        SubjectTileGrid(
+            columns: columns,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+                .radical(.testing),
+                .kanji(.testing),
+            ],
+            limit: 4
+        )
     }
 }

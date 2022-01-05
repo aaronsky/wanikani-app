@@ -1,11 +1,11 @@
 import AppCore
 import SwiftUI
 
-private func subjectsDataFileURL(name: String = "subjects.data") throws -> URL {
-    try FileManager.default
+private let subjectsDataFileURL = { name in
+    try! FileManager.default
         .url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
         .appendingPathComponent(name)
-}
+}("subjects.data")
 
 @main struct WaniKaniApp: App {
     var body: some Scene {
@@ -17,7 +17,7 @@ private func subjectsDataFileURL(name: String = "subjects.data") throws -> URL {
                     environment: AppEnvironment(
                         wanikaniClient: .init(),
                         authenticationClient: .live,
-                        subjects: .live(url: try! subjectsDataFileURL()),
+                        subjects: .live(url: subjectsDataFileURL),
                         mainQueue: .main
                     )
                 )

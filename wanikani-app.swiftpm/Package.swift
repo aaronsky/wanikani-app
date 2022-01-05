@@ -33,10 +33,6 @@ let package = Package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             .upToNextMajor(from: "0.32.0")
         ),
-        .package(
-            url: "https://github.com/pointfreeco/swiftui-navigation",
-            .upToNextMajor(from: "0.1.0")
-        ),
     ],
     targets: [
         .executableTarget(name: "AppModule", dependencies: ["AppCore"]),
@@ -49,7 +45,6 @@ let package = Package(
                 "Subjects",
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
-                .product(name: "SwiftUINavigation", package: "swiftui-navigation"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
             ]
         ),
@@ -64,6 +59,7 @@ let package = Package(
         .target(
             name: "Home",
             dependencies: [
+                "Profile",
                 "Subjects",
                 "SwiftHelpers",
                 "SwiftUIHelpers",

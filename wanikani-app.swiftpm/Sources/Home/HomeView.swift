@@ -1,14 +1,21 @@
 import ComposableArchitecture
+import Profile
 import Subjects
 import SwiftUI
 import WaniKani
 import WaniKaniHelpers
 
 public struct HomeState: Equatable {
+    public enum SubjectsPurpose: Hashable {
+        case lessons
+        case reviews
+    }
+
     public var user: User
     public var summary: Summary?
     public var assignments: [Assignment] = []
-    public var isLoading: Bool = false
+    public var subjects: [SubjectsPurpose: [Subject]] = [:]
+    public var profile: ProfileState?
 
     public init(
         user: User
@@ -22,7 +29,10 @@ public enum HomeAction: Equatable {
     case refresh
     case getSummaryResponse(Result<Response<Summaries.Get>, Error>)
     case getAssignmentsResponse(Result<Response<Assignments.List>, Error>)
+    case getSubjectResponse(Result<(HomeState.SubjectsPurpose, Subject?), Error>)
     case profileButtonTapped
+    case profile(ProfileAction)
+    case dismissProfile
     case startReviewsButtonTapped
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
@@ -53,37 +63,88 @@ public struct HomeEnvironment {
     }
 }
 
-public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment> { state, action, environment in
-    switch action {
-    case .onAppear, .refresh:
-        state.isLoading = true
-        return
-            Effect.merge(
-                environment.wanikaniClient.send(.summary)
-                    .catchToEffect(HomeAction.getSummaryResponse),
-                environment.wanikaniClient.send(.assignments(levels: [state.user.level]))
-                    .catchToEffect(HomeAction.getAssignmentsResponse)
-            )
-            .receive(on: environment.mainQueue)
-            .eraseToEffect()
-    case .getSummaryResponse(.success(let response)):
-        state.summary = response.data
-        return .none
-    case .getSummaryResponse:
-        // TODO: alerting
-        return .none
-    case .getAssignmentsResponse(.success(let response)):
-        state.assignments = Array(response.data)
-        return .none
-    case .getAssignmentsResponse:
-        // TODO: alerting
-        return .none
-    case .profileButtonTapped:
-        return .none
-    case .startReviewsButtonTapped:
-        return .none
-    }
-}
+public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
+    .combine(
+        profileReducer
+            .optional()
+            .pullback(
+                state: \.profile,
+                action: /HomeAction.profile,
+                environment: {
+                    ProfileEnvironment(
+                        wanikaniClient: $0.wanikaniClient,
+                        mainQueue: $0.mainQueue
+                    )
+                }
+            ),
+        Reducer { state, action, environment in
+            switch action {
+            case .onAppear, .refresh:
+                return
+                    Effect.merge(
+                        environment.wanikaniClient.send(.summary)
+                            .catchToEffect(HomeAction.getSummaryResponse),
+                        environment.wanikaniClient.send(.assignments(levels: [state.user.level]))
+                            .catchToEffect(HomeAction.getAssignmentsResponse)
+                    )
+                    .receive(on: environment.mainQueue)
+                    .eraseToEffect()
+            case .getSummaryResponse(.success(let response)):
+                let summary = response.data
+                state.summary = summary
+                return Effect.merge(
+                    Effect.merge(
+                        summary
+                            .lessons
+                            .flatMap { $0.subjectIDs }
+                            .publisher
+                            .flatMap {
+                                environment.subjects.get($0)
+                                    .map { (.lessons, $0) }
+                            }
+                            .catchToEffect(HomeAction.getSubjectResponse)
+                    ),
+                    Effect.merge(
+                        summary
+                            .reviews
+                            .filter { $0.available.timeIntervalSinceNow < 0 }
+                            .flatMap { $0.subjectIDs }
+                            .publisher
+                            .flatMap {
+                                environment.subjects.get($0)
+                                    .map { (.reviews, $0) }
+                            }
+                            .catchToEffect(HomeAction.getSubjectResponse)
+                    )
+                )
+            case .getSummaryResponse:
+                // TODO: alerting
+                return .none
+            case .getAssignmentsResponse(.success(let response)):
+                state.assignments = Array(response.data)
+                return .none
+            case .getAssignmentsResponse:
+                // TODO: alerting
+                return .none
+            case .getSubjectResponse(.success((let purpose, .some(let subject)))):
+                state.subjects[purpose, default: []].append(subject)
+                return .none
+            case .getSubjectResponse:
+                // no alert necessary here
+                return .none
+            case .profileButtonTapped:
+                state.profile = ProfileState(user: state.user)
+                return .none
+            case .profile:
+                return .none
+            case .dismissProfile:
+                state.profile = nil
+                return .none
+            case .startReviewsButtonTapped:
+                return .none
+            }
+        }
+    )
 
 public struct HomeView: View {
     let store: Store<HomeState, HomeAction>
@@ -114,34 +175,40 @@ public struct HomeView: View {
                         header: Text("Lessons")
                             .font(.title3.bold())
                     ) {
-                        if let summary = viewStore.summary {
-                            LessonsReviewsCard(
-                                kind: .lessons,
-                                summary: summary,
-                                showUpcoming: true
-                            )
-                        } else if viewStore.isLoading {
-                            ProgressView()
-                        }
+                        LessonsReviewsCard(
+                            kind: .lessons,
+                            subjects: viewStore.subjects[.lessons, default: []],
+                            showUpcoming: true
+                        )
                     }
                     Section(
                         header: Text("Reviews")
                             .font(.title3.bold())
                     ) {
-                        if let summary = viewStore.summary {
-                            LessonsReviewsCard(
-                                kind: .reviews,
-                                summary: summary,
-                                showUpcoming: false
-                            )
-                        } else if viewStore.isLoading {
-                            ProgressView()
-                        }
+                        LessonsReviewsCard(
+                            kind: .reviews,
+                            subjects: viewStore.subjects[.reviews, default: []],
+                            showUpcoming: false
+                        )
                     }
                 }
                 .padding(.horizontal)
             }
             .navigationTitle("Welcome, \(viewStore.user.username)!")
+            .sheet(
+                isPresented: viewStore.binding(
+                    get: { $0.profile != nil },
+                    send: .dismissProfile
+                )
+            ) {
+                IfLetStore(
+                    store.scope(state: \.profile, action: HomeAction.profile)
+                ) { profileStore in
+                    NavigationView {
+                        ProfileView(store: profileStore)
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button(
@@ -170,9 +237,6 @@ public struct HomeView: View {
             }
             .onAppear {
                 viewStore.send(.onAppear)
-            }
-            .refreshable {
-                await viewStore.send(.refresh, while: \.isLoading)
             }
         }
     }

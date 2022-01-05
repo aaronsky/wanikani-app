@@ -2,6 +2,7 @@ import CasePaths
 import Subjects
 import SwiftUI
 import WaniKani
+import WaniKaniHelpers
 
 struct LessonsReviewsCard: View {
     enum Kind {
@@ -21,87 +22,88 @@ struct LessonsReviewsCard: View {
     let columns = Array(repeating: GridItem(.adaptive(minimum: 40)), count: 4)
 
     let kind: Kind
-    let subjectIDs: [Subject.ID]
+    let subjects: SubjectGroups
     let showUpcoming: Bool
 
     init(
         kind: Kind,
-        summary: Summary?,
+        subjects: [Subject],
         showUpcoming: Bool = false
     ) {
         self.kind = kind
-        self.subjectIDs = {
-            switch kind {
-            case .lessons:
-                return summary?
-                    .lessons
-                    .flatMap(\.subjectIDs) ?? []
-            case .reviews:
-                return summary?
-                    .reviews
-                    .filter { $0.available.timeIntervalSinceNow < 0 }
-                    .flatMap(\.subjectIDs) ?? []
-            }
-        }()
+        self.subjects = SubjectGroups(subjects)
         self.showUpcoming = showUpcoming
     }
-
-    //    let subjects: SubjectRepository
-    //
-    //    var radicals: [Radical] {
-    //        subjectIDs
-    //            .lazy
-    //            .compactMap { subjects[$0] }
-    //            .compactMap(/Subject.radical)
-    //    }
-    //
-    //    var kanji: [Kanji] {
-    //        subjectIDs
-    //            .lazy
-    //            .compactMap { subjects[$0] }
-    //            .compactMap(/Subject.kanji)
-    //    }
-    //
-    //    var vocabulary: [Vocabulary] {
-    //        subjectIDs
-    //            .lazy
-    //            .compactMap { subjects[$0] }
-    //            .compactMap(/Subject.vocabulary)
-    //    }
-    //
-    //    var nextLessons: [Subject] {
-    //        subjectIDs
-    //            .prefix(8)
-    //            .compactMap { subjects[$0] }
-    //    }
 
     var body: some View {
         HStack {
             VStack(alignment: .leading) {
-                Text("\(subjectIDs.count) in the queue")
+                Text("\(subjects.count) in the queue")
                     .font(.subheadline.bold())
                 Spacer()
                 if showUpcoming {
                     Text("Here's what's coming up next:")
                         .font(.caption)
-                    // SubjectTileGrid(columns: columns, subjects: nextLessons)
+                    SubjectTileGrid(
+                        columns: columns,
+                        subjects: Array(subjects.prefix(8))
+                    )
                 }
             }
             Spacer()
-            // VStack(alignment: .trailing) {
-            //     Text("\(radicals.count) radicals")
-            //         .foregroundColor(Color.radical)
-            //     Text("\(kanji.count) kanji")
-            //         .foregroundColor(Color.kanji)
-            //     Text("\(vocabulary.count) vocabulary")
-            //         .foregroundColor(Color.vocabulary)
-            //     Spacer()
-            // }
+            VStack(alignment: .trailing) {
+                Text("\(subjects.radicals.count) radicals")
+                    .foregroundColor(Color.radical)
+                Text("\(subjects.kanji.count) kanji")
+                    .foregroundColor(Color.kanji)
+                Text("\(subjects.vocabulary.count) vocabulary")
+                    .foregroundColor(Color.vocabulary)
+                Spacer()
+            }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(kind.color)
+        )
+    }
+}
+
+struct LessonsReviewsCard_Previews: PreviewProvider {
+    static var previews: some View {
+        LessonsReviewsCard(
+            kind: .lessons,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+            ]
+        )
+        LessonsReviewsCard(
+            kind: .lessons,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+            ],
+            showUpcoming: true
+        )
+        LessonsReviewsCard(
+            kind: .reviews,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+            ]
+        )
+        LessonsReviewsCard(
+            kind: .reviews,
+            subjects: [
+                .radical(.testing),
+                .kanji(.testing),
+                .vocabulary(.testing),
+            ],
+            showUpcoming: true
         )
     }
 }

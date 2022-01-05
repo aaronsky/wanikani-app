@@ -82,7 +82,7 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     case .getVoiceActorsResponse(.success(let response)):
         state.voiceActors = Array(response.data)
         return .none
-    case .getVoiceActorsResponse:
+    case .getVoiceActorsResponse(.failure(let error)):
         // TODO: alerting
         return .none
     case .binding(\.$defaultVoiceActorID):
@@ -126,9 +126,10 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     case .updateUserResponse(.success(let response)):
         // TODO: green checkmark for updated property
         // TODO: update user used across app
+        print("updated user")
         state.updateRequestInFlight = false
         return .none
-    case .updateUserResponse:
+    case .updateUserResponse(.failure(let error)):
         // TODO: alerting
         state.updateRequestInFlight = false
         return .none
@@ -208,6 +209,23 @@ extension User.Preferences.PresentationOrder: CustomStringConvertible {
             return "Shuffled"
         case .ascendingLevelThenShuffled:
             return "Ascending level, then shuffled"
+        }
+    }
+}
+
+struct ProfileView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            ProfileView(
+                store: Store(
+                    initialState: .init(user: .testing),
+                    reducer: profileReducer,
+                    environment: .init(
+                        wanikaniClient: .init(),
+                        mainQueue: .main
+                    )
+                )
+            )
         }
     }
 }
