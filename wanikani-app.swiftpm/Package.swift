@@ -28,7 +28,10 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(path: "../../../swift/wanikani-swift"),
+        .package(
+            url: "https://github.com/aaronsky/wanikani-swift",
+            .branch("main")
+        ),
         .package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",
             .upToNextMajor(from: "0.32.0")

@@ -56,6 +56,15 @@
         }
       },
       {
+        "package": "WaniKani",
+        "repositoryURL": "https://github.com/aaronsky/wanikani-swift",
+        "state": {
+          "branch": "main",
+          "revision": "a4f5f85245c75f23919f1228e9f1faefeed1ee1a",
+          "version": null
+        }
+      },
+      {
         "package": "xctest-dynamic-overlay",
         "repositoryURL": "https://github.com/pointfreeco/xctest-dynamic-overlay",
         "state": {
