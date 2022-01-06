@@ -10,8 +10,8 @@ public struct SubjectTile: View {
         case .radical(let radical):
             if let characters = radical.characters {
                 textTile(characters: characters, kind: .radical)
-            } else {
-                imageTile(url: radical.characterImages.first!.url, kind: .radical)
+            } else if let image = radical.characterImages.first(where: { $0.contentType == "image/png" }) {
+                imageTile(url: image.url, kind: .radical)
             }
         case .kanji(let kanji): textTile(characters: kanji.characters, kind: .kanji)
         case .vocabulary(let vocabulary):
@@ -21,14 +21,14 @@ public struct SubjectTile: View {
 
     @ViewBuilder func textTile(characters: String, kind: Subject.Kind) -> some View {
         Text(characters)
-            .padding(4)
+            .padding(5)
             .background(kind.color)
             .shadow(radius: 1, y: 1)
     }
 
     @ViewBuilder func imageTile(url: URL, kind: Subject.Kind) -> some View {
         AsyncImage(url: url)
-            .padding(4)
+            .padding(5)
             .background(kind.color)
             .shadow(radius: 1, y: 1)
     }
@@ -75,7 +75,7 @@ public struct SubjectTileGrid: View {
     struct OverflowTile: View {
         var body: some View {
             Text("...")
-                .padding(4)
+                .padding(5)
                 .background(Color(.systemGray3))
                 .shadow(radius: 1, y: 1)
         }

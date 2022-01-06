@@ -23,9 +23,14 @@ struct LevelProgressionBar: View {
         init(
             state: HomeState
         ) {
-            userLevel = UserLevel(current: state.user.level, max: state.user.subscription.maxLevelGranted)
+            let level = state.user.level
+            let maxLevel = state.user.subscription.maxLevelGranted
+            userLevel = UserLevel(current: level, max: maxLevel)
 
-            let assignmentsBySubject = Dictionary(grouping: state.assignments, by: \.subjectType)
+            let assignmentsBySubject = Dictionary(
+                grouping: state.assignments,
+                by: \.subjectType
+            )
 
             let radicalAssignments = assignmentsBySubject[.radical] ?? []
             let kanjiAssignments = assignmentsBySubject[.kanji] ?? []

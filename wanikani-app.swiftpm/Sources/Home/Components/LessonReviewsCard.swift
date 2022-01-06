@@ -53,11 +53,11 @@ struct LessonsReviewsCard: View {
             Spacer()
             VStack(alignment: .trailing) {
                 Text("\(subjects.radicals.count) radicals")
-                    .foregroundColor(Color.radical)
+                    .foregroundColor(.radical)
                 Text("\(subjects.kanji.count) kanji")
-                    .foregroundColor(Color.kanji)
+                    .foregroundColor(.kanji)
                 Text("\(subjects.vocabulary.count) vocabulary")
-                    .foregroundColor(Color.vocabulary)
+                    .foregroundColor(.vocabulary)
                 Spacer()
             }
         }
@@ -65,6 +65,7 @@ struct LessonsReviewsCard: View {
         .background(
             RoundedRectangle(cornerRadius: 10)
                 .fill(kind.color)
+                .colorMultiply(.white.opacity(0.75))
         )
     }
 }

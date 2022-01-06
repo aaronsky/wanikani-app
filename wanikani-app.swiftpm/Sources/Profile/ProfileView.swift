@@ -162,15 +162,27 @@ public struct ProfileView: View {
         WithViewStore(store) { viewStore in
             Form {
                 Section {
-                    Text("\(viewStore.username) – Level \(viewStore.userLevel) \(viewStore.userOnVacation ? "🌴" : "")")
+                    HStack {
+                        Text(viewStore.username)
+                        Spacer()
+                        if viewStore.userOnVacation {
+                            Text("🌴")
+                                .font(.body.bold())
+                        }
+                        Text("Level \(viewStore.userLevel)")
+                    }
+
                     Text(
-                        "\(viewStore.userSubscriptionType.rawValue.capitalized) member since \(viewStore.userStarted.formatted(.dateTime.month().year()))"
+                        """
+                        \(viewStore.userSubscriptionType.rawValue.capitalized) member since \(viewStore.userStarted.formatted(.dateTime.month().year()))
+                        """
                     )
                 }
+
                 Section {
                     Picker("Default voice actor", selection: viewStore.binding(\.$defaultVoiceActorID)) {
                         ForEach(viewStore.voiceActors) { voiceActor in
-                            Text("\(voiceActor.name) (\(voiceActor.description))")
+                            Text(voiceActor.name)
                                 .tag(voiceActor.id)
                         }
                     }
