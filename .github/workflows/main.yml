@@ -38,11 +38,12 @@ jobs:
         with:
           xcode-version: latest-stable
       - uses: actions/cache@v2
+        id: cache-swift-format
         with:
           key: swift-format-build-${{ env.SWIFT_FORMAT_VERSION }}
           path: ./swift-format/.build/release/swift-format
       - name: install swift-format
-        if: steps.cache-primes.outputs.cache-hit != 'true'
+        if: steps.cache-swift-format.outputs.cache-hit != 'true'
         run: |-
           git clone https://github.com/apple/swift-format.git
           pushd swift-format
