@@ -4,20 +4,22 @@ import WaniKani
 import WaniKaniHelpers
 
 public struct ProfileState: Equatable {
-    var username: String
-    var userLevel: Int
-    var userOnVacation: Bool
-    var userSubscriptionType: User.Subscription.Kind
-    var userStarted: Date
-    var voiceActors: [VoiceActor] = []
-    var updateRequestInFlight: Bool = false
+    public var alert: AlertState<ProfileAction>?
 
-    @BindableState var defaultVoiceActorID: Int
-    @BindableState var lessonsAutoplayAudio: Bool
-    @BindableState var lessonsBatchSize: Int
-    @BindableState var lessonsPresentationOrder: User.Preferences.PresentationOrder
-    @BindableState var reviewsAutoplayAudio: Bool
-    @BindableState var reviewsDisplaySRSIndicator: Bool
+    public var username: String
+    public var userLevel: Int
+    public var userOnVacation: Bool
+    public var userSubscriptionType: User.Subscription.Kind
+    public var userStarted: Date
+    public var voiceActors: [VoiceActor] = []
+    public var updateRequestInFlight: Bool = false
+
+    @BindableState public var defaultVoiceActorID: Int
+    @BindableState public var lessonsAutoplayAudio: Bool
+    @BindableState public var lessonsBatchSize: Int
+    @BindableState public var lessonsPresentationOrder: User.Preferences.PresentationOrder
+    @BindableState public var reviewsAutoplayAudio: Bool
+    @BindableState public var reviewsDisplaySRSIndicator: Bool
 
     public init(
         user: User
@@ -42,6 +44,7 @@ public enum ProfileAction: BindableAction, Equatable {
     case binding(BindingAction<ProfileState>)
     case getVoiceActorsResponse(Result<Response<VoiceActors.List>, Error>)
     case updateUserResponse(Result<Response<Users.Update>, Error>)
+    case alertDismissed
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
@@ -83,7 +86,10 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
         state.voiceActors = Array(response.data)
         return .none
     case .getVoiceActorsResponse(.failure(let error)):
-        // TODO: alerting
+        state.alert = AlertState(
+            title: TextState("WaniKani error"),
+            message: TextState(error.localizedDescription)
+        )
         return .none
     case .binding(\.$defaultVoiceActorID):
         state.updateRequestInFlight = true
@@ -130,8 +136,14 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
         state.updateRequestInFlight = false
         return .none
     case .updateUserResponse(.failure(let error)):
-        // TODO: alerting
+        state.alert = AlertState(
+            title: TextState("WaniKani error"),
+            message: TextState(error.localizedDescription)
+        )
         state.updateRequestInFlight = false
+        return .none
+    case .alertDismissed:
+        state.alert = nil
         return .none
     }
 }
@@ -185,6 +197,8 @@ public struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
             .onAppear {
                 viewStore.send(.onAppear)
             }

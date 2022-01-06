@@ -85,7 +85,11 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>
             switch action {
             case .restoreSession(.restoreSession(.success(let response))):
                 state = .home(HomeState(user: response.user))
-                return .none  // FIXME: update subjects
+//                return environment.subjects
+//                    .update(environment.wanikaniClient)
+//                    .receive(on: environment.mainQueue)
+//                    .fireAndForget()
+                return .none
             case .restoreSession(.restoreSession(.failure(let error))):
                 print(error)
                 state = .login(.init())

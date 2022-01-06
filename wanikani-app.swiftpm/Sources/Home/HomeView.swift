@@ -11,6 +11,8 @@ public struct HomeState: Equatable {
         case reviews
     }
 
+    public var alert: AlertState<HomeAction>?
+
     public var user: User
     public var summary: Summary?
     public var assignments: [Assignment] = []
@@ -32,8 +34,9 @@ public enum HomeAction: Equatable {
     case getSubjectResponse(Result<(HomeState.SubjectsPurpose, Subject?), Error>)
     case profileButtonTapped
     case profile(ProfileAction)
-    case dismissProfile
+    case profileDismissed
     case startReviewsButtonTapped
+    case alertDismissed
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
@@ -117,14 +120,20 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                             .catchToEffect(HomeAction.getSubjectResponse)
                     )
                 )
-            case .getSummaryResponse:
-                // TODO: alerting
+            case .getSummaryResponse(.failure(let error)):
+                state.alert = AlertState(
+                    title: TextState("WaniKani error"),
+                    message: TextState(error.localizedDescription)
+                )
                 return .none
             case .getAssignmentsResponse(.success(let response)):
                 state.assignments = Array(response.data)
                 return .none
-            case .getAssignmentsResponse:
-                // TODO: alerting
+            case .getAssignmentsResponse(.failure(let error)):
+                state.alert = AlertState(
+                    title: TextState("WaniKani error"),
+                    message: TextState(error.localizedDescription)
+                )
                 return .none
             case .getSubjectResponse(.success((let purpose, .some(let subject)))):
                 state.subjects[purpose, default: []].append(subject)
@@ -137,10 +146,13 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                 return .none
             case .profile:
                 return .none
-            case .dismissProfile:
+            case .profileDismissed:
                 state.profile = nil
                 return .none
             case .startReviewsButtonTapped:
+                return .none
+            case .alertDismissed:
+                state.alert = nil
                 return .none
             }
         }
@@ -195,10 +207,11 @@ public struct HomeView: View {
                 .padding(.horizontal)
             }
             .navigationTitle("Welcome, \(viewStore.user.username)!")
+            .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
             .sheet(
                 isPresented: viewStore.binding(
                     get: { $0.profile != nil },
-                    send: .dismissProfile
+                    send: .profileDismissed
                 )
             ) {
                 IfLetStore(

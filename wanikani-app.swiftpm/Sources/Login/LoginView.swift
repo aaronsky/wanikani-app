@@ -15,8 +15,8 @@ public struct LoginState: Equatable {
 }
 
 public enum LoginAction: Equatable {
-    case alertDismissed
     case tokenChanged(String)
+    case alertDismissed
     case loginButtonTapped
     case loginResponse(Result<AuthenticationResponse, AuthenticationError>)
     case home(HomeAction)
@@ -40,12 +40,12 @@ public struct LoginEnvironment {
 
 public let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> { state, action, environment in
     switch action {
-    case .alertDismissed:
-        state.alert = nil
-        return .none
     case .tokenChanged(let token):
         state.token = token
         state.isTokenValid = !state.token.isEmpty
+        return .none
+    case .alertDismissed:
+        state.alert = nil
         return .none
     case .loginButtonTapped:
         state.isLoginRequestInFlight = true
@@ -112,12 +112,12 @@ public struct LoginView: View {
                     }
                     .disabled(!viewStore.isTokenValid)
                 }
-                .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
                 .disabled(viewStore.isLoginRequestInFlight)
                 .padding(.horizontal)
             }
+            .navigationTitle("Login")
+            .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
         }
-        .navigationTitle("Login")
     }
 }
 
