@@ -9,7 +9,7 @@ import PackageDescription
 
 let package = Package(
     name: "WaniKaniApp",
-    platforms: [.iOS("15.0")],
+    platforms: [.iOS("15.2")],
     products: [
         .iOSApplication(
             name: "WaniKaniApp",
