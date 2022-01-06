@@ -20,16 +20,4 @@ lint:
 		--recursive \
 		$(SOURCES) $(TESTS)
 
-build_ci:
-	mkdir -p $(DERIVED_DATA_PATH)
-	cd $(SWIFTPM_APP_PROJECT)
-	xcodebuild \
-		-scheme WaniKaniApp \
-		-configuration Debug \
-		-destination 'platform=iOS Simulator,OS=latest,name=iPhone 13 Pro' \
-		-derivedDataPath $(DERIVED_DATA_PATH) \
-		-quiet \
-		build
-	cd -
-
-.PHONY: format lint build_ci
+.PHONY: format lint

@@ -18,8 +18,17 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+      - run: mkdir -p DerivedData
       - name: xcodebuild
-        run: make build_ci
+        working-directory: wanikani-app.swiftpm
+        run: |
+          xcodebuild \
+            -scheme WaniKaniApp \
+            -configuration Debug \
+            -destination 'platform=iOS Simulator,OS=latest,name=iPhone 13 Pro' \
+            -derivedDataPath $(DERIVED_DATA_PATH) \
+            -quiet \
+            build
   lint:
     runs-on: macOS-11
     env:
@@ -30,13 +39,17 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
+      - uses: actions/cache@v2
+        with:
+          key: swift-format-build-${{ env.SWIFT_FORMAT_VERSION }}
+          path: ./swift-format/.build/release/swift-format
       - name: install swift-format
         run: |-
           git clone https://github.com/apple/swift-format.git
-          cd swift-format
+          pushd swift-format
           git checkout "tags/${{ env.SWIFT_FORMAT_VERSION }}"
           swift build -c release
-          install .build/release/swift-format
-          cd -
+          install .build/release/swift-format ~/bin
+          popd
       - name: lint
-        run: make lint
+        run: env PATH="$HOME/bin:$PATH" make lint
