@@ -18,7 +18,6 @@ jobs:
       - uses: maxim-lobanov/setup-xcode@v1
         with:
           xcode-version: latest-stable
-      # - run: mkdir -p DerivedData
       - name: xcodebuild
         working-directory: wanikani-app.swiftpm
         run: |
@@ -43,6 +42,7 @@ jobs:
           key: swift-format-build-${{ env.SWIFT_FORMAT_VERSION }}
           path: ./swift-format/.build/release/swift-format
       - name: install swift-format
+        if: steps.cache-primes.outputs.cache-hit != 'true'
         run: |-
           git clone https://github.com/apple/swift-format.git
           pushd swift-format

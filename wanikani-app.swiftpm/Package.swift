@@ -83,6 +83,7 @@ let package = Package(
         .target(
             name: "Profile",
             dependencies: [
+                "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
             ]
