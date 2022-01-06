@@ -4,7 +4,9 @@ import UIKit
 public struct ToSwiftUI<Controller: UIViewController>: UIViewControllerRepresentable {
     let controller: () -> Controller
 
-    public init(controller: @escaping () -> Controller) {
+    public init(
+        controller: @escaping () -> Controller
+    ) {
         self.controller = controller
     }
 
