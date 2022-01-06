@@ -4,4 +4,4 @@ Experimenting with TCA and some other stuff to make a cool WaniKani iOS app for 
 
 ## License
 
-Clear BSD-3
+Apache License 2.0
