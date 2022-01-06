@@ -30,7 +30,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/aaronsky/wanikani-swift",
-            .branch("main")
+            .upToNextMajor(from: "0.0.1")
         ),
         .package(
             url: "https://github.com/pointfreeco/swift-composable-architecture",

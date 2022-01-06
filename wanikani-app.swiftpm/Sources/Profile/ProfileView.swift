@@ -112,7 +112,7 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     case .binding(\.$lessonsPresentationOrder):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(lessonsPresentationOrder: state.lessonsPresentationOrder.rawValue))
+            .send(.updateUser(lessonsPresentationOrder: state.lessonsPresentationOrder))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$reviewsAutoplayAudio):
