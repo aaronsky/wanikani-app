@@ -155,6 +155,15 @@ let package = Package(
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
+        ),
+        .testTarget(
+            name: "SwiftHelpersTests",
+            dependencies: [
+                "SwiftHelpers"
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
         )
     ]
 )

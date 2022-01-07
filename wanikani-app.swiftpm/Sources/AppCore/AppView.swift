@@ -134,11 +134,13 @@ public struct AppView: View {
                 NavigationView {
                     LoginView(store: store)
                 }
+                .navigationViewStyle(.stack)
             }
             CaseLet(state: /AppState.home, action: AppAction.home) { store in
                 NavigationView {
                     HomeView(store: store)
                 }
+                .navigationViewStyle(.stack)
             }
         }
     }
