@@ -38,7 +38,13 @@ let package = Package(
         ),
     ],
     targets: [
-        .executableTarget(name: "AppModule", dependencies: ["AppCore"]),
+        .executableTarget(
+            name: "AppModule",
+            dependencies: ["AppCore"],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         .target(
             name: "AppCore",
             dependencies: [
@@ -49,6 +55,9 @@ let package = Package(
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -57,6 +66,9 @@ let package = Package(
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -69,15 +81,26 @@ let package = Package(
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ), 
-        .target(name: "Lessons"),
+        .target(
+            name: "Lessons",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         .target(
             name: "Login",
             dependencies: [
                 "Authentication",
                 "Home",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ), 
         .target(
@@ -86,24 +109,48 @@ let package = Package(
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ), 
-        .target(name: "Reviews"), 
+        .target(
+            name: "Reviews",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         .target(
             name: "Subjects",
             dependencies: [
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
-        .target(name: "SwiftHelpers"),
-        .target(name: "SwiftUIHelpers"),
+        .target(
+            name: "SwiftHelpers",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "SwiftUIHelpers",
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
         .target(
             name: "WaniKaniHelpers",
             dependencies: [
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
     ]

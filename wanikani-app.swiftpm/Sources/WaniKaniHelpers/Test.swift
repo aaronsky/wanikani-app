@@ -1,6 +1,7 @@
 import Foundation
 import WaniKani
 
+#if DEBUG
 // MARK: - Subjects
 
 let dateFormatter: ISO8601DateFormatter = {
@@ -284,3 +285,4 @@ extension User {
         url: URL(string: "https://api.wanikani.com/v2/user")!
     )
 }
+#endif
