@@ -2,7 +2,7 @@ import ComposableArchitecture
 import SwiftHelpers
 import SwiftUI
 import SwiftUIHelpers
-import WaniKani
+import WaniKaniHelpers
 
 struct LevelProgressionBar: View {
     struct ViewState: Equatable {

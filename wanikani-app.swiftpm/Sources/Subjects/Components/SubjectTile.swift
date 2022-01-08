@@ -1,5 +1,5 @@
 import SwiftUI
-import WaniKani
+import WaniKaniHelpers
 
 public struct SubjectTile: View {
     var subject: Subject

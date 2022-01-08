@@ -1,5 +1,4 @@
 import ComposableArchitecture
-import WaniKani
 import WaniKaniHelpers
 
 public struct SubjectClient {

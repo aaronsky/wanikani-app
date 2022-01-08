@@ -4,7 +4,7 @@ import Home
 import Login
 import Subjects
 import SwiftUI
-import WaniKani
+import WaniKaniHelpers
 
 public enum AppState: Equatable {
     case restoreSession(RestoreSessionState)

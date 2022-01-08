@@ -2,7 +2,6 @@ import ComposableArchitecture
 import Profile
 import Subjects
 import SwiftUI
-import WaniKani
 import WaniKaniHelpers
 
 public struct HomeState: Equatable {

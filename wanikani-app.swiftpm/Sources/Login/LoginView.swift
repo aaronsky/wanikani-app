@@ -2,7 +2,7 @@ import Authentication
 import ComposableArchitecture
 import Home
 import SwiftUI
-import WaniKani
+import WaniKaniHelpers
 
 public struct LoginState: Equatable {
     public var alert: AlertState<LoginAction>?

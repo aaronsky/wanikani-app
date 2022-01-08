@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import WaniKani
+import WaniKaniHelpers
 
 extension AuthenticationClient {
     public static let live = Self(

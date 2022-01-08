@@ -1,5 +1,5 @@
 import ComposableArchitecture
-import WaniKani
+import WaniKaniHelpers
 
 extension SubjectClient {
     public static func live(url: URL) -> Self {
