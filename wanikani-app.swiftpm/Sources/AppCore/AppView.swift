@@ -25,13 +25,13 @@ public enum AppAction: Equatable {
 }
 
 public struct AppEnvironment {
-    public var wanikaniClient: WaniKani
+    public var wanikaniClient: WaniKaniComposableClient
     public var authenticationClient: AuthenticationClient
     public var subjects: SubjectClient
     public var mainQueue: AnySchedulerOf<DispatchQueue>
 
     public init(
-        wanikaniClient: WaniKani,
+        wanikaniClient: WaniKaniComposableClient,
         authenticationClient: AuthenticationClient,
         subjects: SubjectClient,
         mainQueue: AnySchedulerOf<DispatchQueue>
@@ -154,7 +154,7 @@ struct AppView_Previews: PreviewProvider {
                     initialState: .init(),
                     reducer: appReducer,
                     environment: .init(
-                        wanikaniClient: .init(),
+                        wanikaniClient: .testing,
                         authenticationClient: .testing,
                         subjects: .testing,
                         mainQueue: .main

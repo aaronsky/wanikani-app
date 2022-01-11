@@ -28,8 +28,8 @@ public struct HomeState: Equatable {
 public enum HomeAction: Equatable {
     case onAppear
     case refresh
-    case getSummaryResponse(Result<Response<Summaries.Get>, Error>)
-    case getAssignmentsResponse(Result<Response<Assignments.List>, Error>)
+    case getSummaryResponse(Result<Response<Summaries.Get>.Content, Error>)
+    case getAssignmentsResponse(Result<Response<Assignments.List>.Content, Error>)
     case getSubjectResponse(Result<(HomeState.SubjectsPurpose, Subject?), Error>)
     case profileButtonTapped
     case profile(ProfileAction)
@@ -50,12 +50,12 @@ public enum HomeAction: Equatable {
 }
 
 public struct HomeEnvironment {
-    public var wanikaniClient: WaniKani
+    public var wanikaniClient: WaniKaniComposableClient
     public var subjects: SubjectClient
     public var mainQueue: AnySchedulerOf<DispatchQueue>
 
     public init(
-        wanikaniClient: WaniKani,
+        wanikaniClient: WaniKaniComposableClient,
         subjects: SubjectClient,
         mainQueue: AnySchedulerOf<DispatchQueue>
     ) {
@@ -84,15 +84,16 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
             case .onAppear, .refresh:
                 return
                     Effect.merge(
-                        environment.wanikaniClient.send(.summary)
+                        environment.wanikaniClient
+                            .summary()
                             .catchToEffect(HomeAction.getSummaryResponse),
-                        environment.wanikaniClient.send(.assignments(levels: [state.user.level]))
+                        environment.wanikaniClient
+                            .listAssignments(.assignments(levels: [state.user.level]), nil)
                             .catchToEffect(HomeAction.getAssignmentsResponse)
                     )
                     .receive(on: environment.mainQueue)
                     .eraseToEffect()
-            case .getSummaryResponse(.success(let response)):
-                let summary = response.data
+            case .getSummaryResponse(.success(let summary)):
                 state.summary = summary
                 return Effect.merge(
                     Effect.merge(
@@ -126,7 +127,7 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                 )
                 return .none
             case .getAssignmentsResponse(.success(let response)):
-                state.assignments = Array(response.data)
+                state.assignments = Array(response)
                 return .none
             case .getAssignmentsResponse(.failure(let error)):
                 state.alert = AlertState(
@@ -178,7 +179,7 @@ public struct HomeView: View {
                             .font(.subheadline.bold())
                         }
 
-                        LevelProgressionBar(store: store)
+                        LevelProgressionBar(state: .init(user: viewStore.user, assignments: viewStore.assignments))
                     }
                     Text("Coming Up")
                         .font(.title2.bold())
@@ -201,6 +202,21 @@ public struct HomeView: View {
                             subjects: viewStore.subjects[.reviews, default: []],
                             showUpcoming: false
                         )
+                    }
+
+                    Section(
+                        header: Text("More")
+                            .font(.title3.bold())
+                    ) {
+                        NavigationLink(destination: EmptyView()) {
+                            Label("Subjects", systemImage: "gear")
+                        }
+                        NavigationLink(destination: EmptyView()) {
+                            Label("Progress", systemImage: "gear")
+                        }
+                        NavigationLink(destination: EmptyView()) {
+                            Label("Dominic", systemImage: "gear")
+                        }
                     }
                 }
                 .padding(.horizontal)
@@ -228,7 +244,7 @@ public struct HomeView: View {
                             viewStore.send(.profileButtonTapped)
                         },
                         label: {
-                            Label("Profile", systemImage: "gear")
+                            Label("Profile", systemImage: "person.circle")
                         }
                     )
                 }
@@ -262,7 +278,7 @@ struct HomeView_Previews: PreviewProvider {
                     initialState: .init(user: .testing),
                     reducer: homeReducer,
                     environment: .init(
-                        wanikaniClient: .init(),
+                        wanikaniClient: .testing,
                         subjects: .testing,
                         mainQueue: .main
                     )

@@ -41,8 +41,8 @@ public struct ProfileState: Equatable {
 public enum ProfileAction: BindableAction, Equatable {
     case onAppear
     case binding(BindingAction<ProfileState>)
-    case getVoiceActorsResponse(Result<Response<VoiceActors.List>, Error>)
-    case updateUserResponse(Result<Response<Users.Update>, Error>)
+    case getVoiceActorsResponse(Result<Response<VoiceActors.List>.Content, Error>)
+    case updateUserResponse(Result<Response<Users.Update>.Content, Error>)
     case alertDismissed
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
@@ -62,11 +62,11 @@ public enum ProfileAction: BindableAction, Equatable {
 }
 
 public struct ProfileEnvironment {
-    public var wanikaniClient: WaniKani
+    public var wanikaniClient: WaniKaniComposableClient
     public var mainQueue: AnySchedulerOf<DispatchQueue>
 
     public init(
-        wanikaniClient: WaniKani,
+        wanikaniClient: WaniKaniComposableClient,
         mainQueue: AnySchedulerOf<DispatchQueue>
     ) {
         self.wanikaniClient = wanikaniClient
@@ -78,11 +78,11 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     switch action {
     case .onAppear:
         return environment.wanikaniClient
-            .send(.voiceActors())
+            .listVoiceActors(.voiceActors(), nil)
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.getVoiceActorsResponse)
     case .getVoiceActorsResponse(.success(let response)):
-        state.voiceActors = Array(response.data)
+        state.voiceActors = Array(response)
         return .none
     case .getVoiceActorsResponse(.failure(let error)):
         state.alert = AlertState(
@@ -93,37 +93,37 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     case .binding(\.$defaultVoiceActorID):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(defaultVoiceActorID: state.defaultVoiceActorID))
+            .updateUser(.updateUser(defaultVoiceActorID: state.defaultVoiceActorID))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsAutoplayAudio):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(lessonsAutoplayAudio: state.lessonsAutoplayAudio))
+            .updateUser(.updateUser(lessonsAutoplayAudio: state.lessonsAutoplayAudio))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsBatchSize):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(lessonsBatchSize: state.lessonsBatchSize))
+            .updateUser(.updateUser(lessonsBatchSize: state.lessonsBatchSize))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$lessonsPresentationOrder):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(lessonsPresentationOrder: state.lessonsPresentationOrder))
+            .updateUser(.updateUser(lessonsPresentationOrder: state.lessonsPresentationOrder))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$reviewsAutoplayAudio):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(reviewsAutoplayAudio: state.reviewsAutoplayAudio))
+            .updateUser(.updateUser(reviewsAutoplayAudio: state.reviewsAutoplayAudio))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding(\.$reviewsDisplaySRSIndicator):
         state.updateRequestInFlight = true
         return environment.wanikaniClient
-            .send(.updateUser(reviewsDisplaySRSIndicator: state.reviewsDisplaySRSIndicator))
+            .updateUser(.updateUser(reviewsDisplaySRSIndicator: state.reviewsDisplaySRSIndicator))
             .receive(on: environment.mainQueue)
             .catchToEffect(ProfileAction.updateUserResponse)
     case .binding:
@@ -246,7 +246,7 @@ struct ProfileView_Previews: PreviewProvider {
                     initialState: .init(user: .testing),
                     reducer: profileReducer,
                     environment: .init(
-                        wanikaniClient: .init(),
+                        wanikaniClient: .testing,
                         mainQueue: .main
                     )
                 )

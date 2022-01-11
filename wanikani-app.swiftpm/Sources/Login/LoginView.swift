@@ -23,12 +23,12 @@ public enum LoginAction: Equatable {
 }
 
 public struct LoginEnvironment {
-    public var wanikaniClient: WaniKani
+    public var wanikaniClient: WaniKaniComposableClient
     public var authenticationClient: AuthenticationClient
     public var mainQueue: AnySchedulerOf<DispatchQueue>
 
     public init(
-        wanikaniClient: WaniKani,
+        wanikaniClient: WaniKaniComposableClient,
         authenticationClient: AuthenticationClient,
         mainQueue: AnySchedulerOf<DispatchQueue>
     ) {
@@ -129,7 +129,7 @@ struct LoginView_Previews: PreviewProvider {
                     initialState: .init(),
                     reducer: loginReducer,
                     environment: .init(
-                        wanikaniClient: .init(),
+                        wanikaniClient: .testing,
                         authenticationClient: .testing,
                         mainQueue: .main
                     )

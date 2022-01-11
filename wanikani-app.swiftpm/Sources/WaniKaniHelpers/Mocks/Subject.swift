@@ -23,27 +23,29 @@ extension Radical {
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/4lxmimfbwuvl07s11dq0f9til0mb")!,
-                metadata: .png(.init(color: "#000000", dimensions: "1024x1024", styleName: "original"))
+                metadata: .png(
+                    .init(color: "#000000", dimensions: .init(width: 1024, height: 1024), styleName: "original")
+                )
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/3n3dlzyjjgou47qb4h4uewghcfcx")!,
-                metadata: .png(.init(color: "#000000", dimensions: "512x512", styleName: "512px"))
+                metadata: .png(.init(color: "#000000", dimensions: .init(width: 512, height: 512), styleName: "512px"))
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/gfwzjl41i5v5oiwrsjz5zz957nww")!,
-                metadata: .png(.init(color: "#000000", dimensions: "256x256", styleName: "256px"))
+                metadata: .png(.init(color: "#000000", dimensions: .init(width: 256, height: 256), styleName: "256px"))
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/m79ver1yfujpkcfa0bo5tcueuxk3")!,
-                metadata: .png(.init(color: "#000000", dimensions: "128x128", styleName: "128px"))
+                metadata: .png(.init(color: "#000000", dimensions: .init(width: 128, height: 128), styleName: "128px"))
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/gcqkjhbw9aguieat8yrqxz09qszn")!,
-                metadata: .png(.init(color: "#000000", dimensions: "64x64", styleName: "64px"))
+                metadata: .png(.init(color: "#000000", dimensions: .init(width: 64, height: 64), styleName: "64px"))
             ),
             CharacterImage(
                 url: URL(string: "https://files.wanikani.com/7czfgjlgsjxx8sndvfkezts6ugj1")!,
-                metadata: .png(.init(color: "#000000", dimensions: "32x32", styleName: "32px"))
+                metadata: .png(.init(color: "#000000", dimensions: .init(width: 32, height: 32), styleName: "32px"))
             ),
         ],
         created: dateFormatter.date(from: "2012-02-27T18:08:16.000000Z")!,

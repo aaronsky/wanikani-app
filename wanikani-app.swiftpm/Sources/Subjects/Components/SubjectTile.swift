@@ -11,9 +11,10 @@ public struct SubjectTile: View {
             if let characters = radical.characters {
                 textTile(characters: characters, kind: .radical)
             } else if let image = radical.characterImages.first(where: { $0.contentType == "image/png" }) {
-                imageTile(url: image.url, kind: .radical)
+                imageTile(image: image, kind: .radical)
             }
-        case .kanji(let kanji): textTile(characters: kanji.characters, kind: .kanji)
+        case .kanji(let kanji):
+            textTile(characters: kanji.characters, kind: .kanji)
         case .vocabulary(let vocabulary):
             textTile(characters: vocabulary.characters, kind: .vocabulary)
         }
@@ -26,11 +27,28 @@ public struct SubjectTile: View {
             .shadow(radius: 1, y: 1)
     }
 
-    @ViewBuilder func imageTile(url: URL, kind: Subject.Kind) -> some View {
-        AsyncImage(url: url)
+    @ViewBuilder func imageTile(image: Radical.CharacterImage, kind: Subject.Kind) -> some View {
+        switch image.metadata {
+        case .svg:
+            fatalError("svg not supported at present")
+        case .png(let png):
+            AsyncImage(
+                url: image.url,
+                content: { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(maxWidth: CGFloat(png.dimensions.width), maxHeight: CGFloat(png.dimensions.height))
+                },
+                placeholder: {
+                    ProgressView()
+                }
+            )
             .padding(5)
             .background(kind.color)
+            // .foregroundColor(png.color)
             .shadow(radius: 1, y: 1)
+        }
     }
 }
 
@@ -63,8 +81,8 @@ public struct SubjectTileGrid: View {
     public var body: some View {
         LazyVGrid(columns: columns, spacing: 5) {
             let (subjects, showMoreTile) = nextSubjects
-            ForEach(subjects, id: \.self) {
-                subject in SubjectTile(subject: subject)
+            ForEach(subjects) { subject in
+                SubjectTile(subject: subject)
             }
             if showMoreTile {
                 OverflowTile()

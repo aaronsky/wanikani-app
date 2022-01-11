@@ -15,7 +15,7 @@ private let subjectsDataFileURL = { name in
                     initialState: .init(),
                     reducer: appReducer,
                     environment: AppEnvironment(
-                        wanikaniClient: .init(),
+                        wanikaniClient: .live,
                         authenticationClient: .live,
                         subjects: .live(url: subjectsDataFileURL),
                         mainQueue: .main
@@ -33,7 +33,7 @@ struct WaniKaniApp_Previews: PreviewProvider {
                 initialState: .init(),
                 reducer: appReducer,
                 environment: .init(
-                    wanikaniClient: .init(),
+                    wanikaniClient: .testing,
                     authenticationClient: .testing,
                     subjects: .testing,
                     mainQueue: .main

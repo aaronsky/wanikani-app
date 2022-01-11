@@ -1,42 +1,46 @@
+import Combine
 import ComposableArchitecture
 import WaniKaniHelpers
 
 extension AuthenticationClient {
-    public static let live = Self(
-        login: Self.login,
+    public static let live: AuthenticationClient = .init(
+        login: performLogin,
         logout: .catching(Keychain.deleteAll)
     )
+}
 
-    private static func login(
-        request: LoginRequest,
-        wanikaniClient: WaniKani
-    ) -> Effect<AuthenticationResponse, Error> {
-        Effect.task {
-            let oldValue = wanikaniClient.token
-
-            do {
-                let token = try request.token ?? Keychain.copyFirstTokenInDomain()
-                wanikaniClient.token = token
-
-                let response = try await wanikaniClient.send(.me)
-                let user = response.data
-
+private func performLogin(
+    request: LoginRequest,
+    wanikaniClient: WaniKaniComposableClient
+) -> Effect<AuthenticationResponse, Error> {
+    Future<String, Error> { promise in
+        if let token = request.token {
+            return promise(.success(token))
+        }
+        do {
+            let token = try Keychain.copyFirstTokenInDomain()
+            return promise(.success(token))
+        } catch {
+            return promise(.failure(error))
+        }
+    }
+    .flatMap { token in
+        wanikaniClient.authorize(token)
+            .tryMap { user -> AuthenticationResponse in
                 if request.storeValidTokenInKeychain {
                     try Keychain.add(token)
                 }
-
                 return AuthenticationResponse(user: user)
-            } catch let error as WaniKani.Error {
-                wanikaniClient.token = oldValue
-
-                throw AuthenticationError(error)
-            } catch let error as Keychain.Error {
-                wanikaniClient.token = oldValue
-
-                throw AuthenticationError.keychainError(error)
-            } catch {
-                throw error
             }
+    }
+    .mapError { error -> Error in
+        if let error = error as? WaniKani.Error {
+            return AuthenticationError(error)
+        } else if let error = error as? Keychain.Error {
+            return AuthenticationError.keychainError(error)
+        } else {
+            return error
         }
     }
+    .eraseToEffect()
 }

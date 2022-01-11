@@ -21,14 +21,15 @@ struct LevelProgressionBar: View {
         var kanji: AssignmentsProgress
 
         init(
-            state: HomeState
+            user: User,
+            assignments: [Assignment]
         ) {
-            let level = state.user.level
-            let maxLevel = state.user.subscription.maxLevelGranted
+            let level = user.level
+            let maxLevel = user.subscription.maxLevelGranted
             userLevel = UserLevel(current: level, max: maxLevel)
 
             let assignmentsBySubject = Dictionary(
-                grouping: state.assignments,
+                grouping: assignments,
                 by: \.subjectType
             )
 
@@ -49,30 +50,28 @@ struct LevelProgressionBar: View {
         }
     }
 
-    let store: Store<HomeState, HomeAction>
+    let state: ViewState
 
     var body: some View {
-        WithViewStore(store.scope(state: ViewState.init)) { viewStore in
-            VStack(alignment: .trailing, spacing: 5) {
-                ProgressView(
-                    value: Double(viewStore.kanji.passed),
-                    total: Double(viewStore.kanji.total)
-                ) {
-                    Text(levelProgressLabel(for: viewStore.state))
-                        .font(.caption)
-                }
-                .progressViewStyle(ColorfulProgressViewStyle(accentColor: Color.kanji))
-                .frame(height: 27)
+        VStack(alignment: .trailing, spacing: 5) {
+            ProgressView(
+                value: Double(state.kanji.passed),
+                total: Double(state.kanji.total)
+            ) {
+                Text(levelProgressLabel)
+                    .font(.caption)
+            }
+            .progressViewStyle(ColorfulProgressViewStyle(accentColor: Color.kanji))
+            .frame(height: 27)
 
-                if let radicalsRemainingLabel = radicalsRemainingLabel(for: viewStore.state) {
-                    Text(radicalsRemainingLabel)
-                        .font(.caption)
-                }
+            if let radicalsRemainingLabel = radicalsRemainingLabel {
+                Text(radicalsRemainingLabel)
+                    .font(.caption)
             }
         }
     }
 
-    private func levelProgressLabel(for state: ViewState) -> String {
+    private var levelProgressLabel: String {
         let remaining = state.kanji.total - state.kanji.passed
 
         guard remaining > 0 else {
@@ -90,7 +89,7 @@ struct LevelProgressionBar: View {
         return "Pass \(remaining) more kanji \(nextLevelMessage)"
     }
 
-    private func radicalsRemainingLabel(for state: ViewState) -> String? {
+    private var radicalsRemainingLabel: String? {
         let remaining = state.radicals.total - state.radicals.passed
 
         guard remaining > 0 else {
@@ -104,14 +103,9 @@ struct LevelProgressionBar: View {
 struct LevelProgressionBar_Previews: PreviewProvider {
     static var previews: some View {
         LevelProgressionBar(
-            store: Store(
-                initialState: .init(user: .testing),
-                reducer: homeReducer,
-                environment: .init(
-                    wanikaniClient: .init(),
-                    subjects: .testing,
-                    mainQueue: .main
-                )
+            state: .init(
+                user: .testing,
+                assignments: []
             )
         )
     }

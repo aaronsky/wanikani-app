@@ -1,6 +1,8 @@
 import ComposableArchitecture
 import WaniKaniHelpers
 
+import class Combine.AnyCancellable
+
 extension SubjectClient {
     public static func live(url: URL) -> Self {
         var _storage: InMemoryStorage!
@@ -17,7 +19,13 @@ extension SubjectClient {
                 .catching { try storage().subjects[id] }
             },
             update: { wanikaniClient in
-                .catching { try storage().update(from: wanikaniClient) }
+                Effect.catching {
+                    try storage()
+                }
+                .flatMap { s in
+                    s.update(from: wanikaniClient)
+                }
+                .eraseToEffect()
             },
             save: .catching { try storage().save(to: url) }
         )
@@ -26,6 +34,8 @@ extension SubjectClient {
     private class InMemoryStorage {
         var subjects: [Subject.ID: Subject] = [:]
         var lastModified: Date?
+
+        var cancellables: Set<AnyCancellable> = []
 
         init(
             url: URL
@@ -47,24 +57,30 @@ extension SubjectClient {
             self.lastModified = modificationDate
         }
 
-        func update(from wanikani: WaniKani) throws {
+        func update(from wanikaniClient: WaniKaniComposableClient) -> Effect<Void, Error> {
             if let lastModified = lastModified,
                 lastModified.timeIntervalSinceNow <= 21600
             {
-                return
+                return .none
             }
 
-            Task {
-                for try await response in wanikani.paginate(.subjects(updatedAfter: lastModified)) {
-                    subjects.merge(
+            return
+                wanikaniClient.paginate(
+                    wanikaniClient.listSubjects,
+                    resource: .subjects(updatedAfter: lastModified)
+                )
+                .reduce(subjects) { allSubjects, response in
+                    allSubjects.merging(
                         Dictionary(
-                            response.data.map { ($0.id, $0) },
+                            response.map { ($0.id, $0) },
                             uniquingKeysWith: { (_, new) in new }
                         ),
                         uniquingKeysWith: { (_, new) in new }
                     )
                 }
-            }
+                .map { _ in () }
+                .eraseToEffect()
+
         }
 
         func save(to url: URL) throws {
