@@ -59,9 +59,9 @@
         "package": "WaniKani",
         "repositoryURL": "https://github.com/aaronsky/wanikani-swift",
         "state": {
-          "branch": "main",
-          "revision": "f41cced3809492fe3abf9abce4d244ee55c31c62",
-          "version": null
+          "branch": null,
+          "revision": "4ec1fba7f182b57cc03e0c2ffc15658eff5b9239",
+          "version": "0.0.2"
         }
       },
       {

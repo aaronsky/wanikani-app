@@ -35,7 +35,7 @@ let package = Package(
         )
     ],
     dependencies: [
-        .package(url: "https://github.com/aaronsky/wanikani-swift", .branch("main")),
+        .package(url: "https://github.com/aaronsky/wanikani-swift", "0.0.2"..<"1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", "0.32.0"..<"1.0.0")
     ],
     targets: [
