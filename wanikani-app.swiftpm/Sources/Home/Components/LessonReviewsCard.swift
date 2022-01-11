@@ -1,6 +1,6 @@
-import CasePaths
 import Subjects
 import SwiftUI
+import WaniKani
 import WaniKaniHelpers
 
 struct LessonsReviewsCard: View {

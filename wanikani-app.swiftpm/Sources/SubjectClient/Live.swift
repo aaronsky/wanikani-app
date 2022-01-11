@@ -1,5 +1,6 @@
 import ComposableArchitecture
-import WaniKaniHelpers
+import WaniKani
+import WaniKaniComposableClient
 
 import class Combine.AnyCancellable
 

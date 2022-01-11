@@ -1,10 +1,10 @@
-import Authentication
+import AuthenticationClient
 import ComposableArchitecture
 import Home
 import Login
-import Subjects
+import SubjectClient
 import SwiftUI
-import WaniKaniHelpers
+import WaniKaniComposableClient
 
 public enum AppState: Equatable {
     case restoreSession(RestoreSessionState)

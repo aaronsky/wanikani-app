@@ -1,6 +1,7 @@
 import Combine
 import ComposableArchitecture
-import WaniKaniHelpers
+import WaniKani
+import WaniKaniComposableClient
 
 public struct LoginRequest {
     public var token: String?

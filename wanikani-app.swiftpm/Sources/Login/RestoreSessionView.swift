@@ -1,8 +1,8 @@
-import Authentication
+import AuthenticationClient
 import ComposableArchitecture
 import Home
 import SwiftUI
-import WaniKaniHelpers
+import WaniKaniComposableClient
 
 public struct RestoreSessionState: Equatable {
     public init() {}

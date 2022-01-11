@@ -1,5 +1,7 @@
 import ComposableArchitecture
 import SwiftUI
+import WaniKani
+import WaniKaniComposableClient
 import WaniKaniHelpers
 
 public struct ProfileState: Equatable {

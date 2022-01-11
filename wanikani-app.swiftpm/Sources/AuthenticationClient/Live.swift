@@ -1,6 +1,7 @@
 import Combine
 import ComposableArchitecture
-import WaniKaniHelpers
+import WaniKani
+import WaniKaniComposableClient
 
 extension AuthenticationClient {
     public static let live: AuthenticationClient = .init(

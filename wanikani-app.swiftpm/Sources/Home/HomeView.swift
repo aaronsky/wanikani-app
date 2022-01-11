@@ -1,8 +1,9 @@
 import ComposableArchitecture
 import Profile
-import Subjects
+import SubjectClient
 import SwiftUI
-import WaniKaniHelpers
+import WaniKani
+import WaniKaniComposableClient
 
 public struct HomeState: Equatable {
     public enum SubjectsPurpose: Hashable {

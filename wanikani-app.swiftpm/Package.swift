@@ -42,8 +42,7 @@ let package = Package(
         .executableTarget(
             name: "AppModule",
             dependencies: [
-                "AppCore",
-                "WaniKaniHelpers"
+                "AppCore"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -52,11 +51,11 @@ let package = Package(
         .target(
             name: "AppCore",
             dependencies: [
-                "Authentication",
-                "Login",
+                "AuthenticationClient",
                 "Home",
-                "Subjects",
-                "WaniKaniHelpers",
+                "Login",
+                "SubjectClient",
+                "WaniKaniComposableClient",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
             ],
             swiftSettings: [
@@ -64,10 +63,12 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Authentication",
+            name: "AuthenticationClient",
             dependencies: [
+                "WaniKaniComposableClient",
                 "WaniKaniHelpers",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -77,11 +78,14 @@ let package = Package(
             name: "Home",
             dependencies: [
                 "Profile",
+                "SubjectClient",
                 "Subjects",
                 "SwiftHelpers",
                 "SwiftUIHelpers",
+                "WaniKaniComposableClient",
                 "WaniKaniHelpers",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -96,8 +100,9 @@ let package = Package(
         .target(
             name: "Login",
             dependencies: [
-                "Authentication",
+                "AuthenticationClient",
                 "Home",
+                "WaniKaniComposableClient",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
             ],
             swiftSettings: [
@@ -107,8 +112,10 @@ let package = Package(
         .target(
             name: "Profile",
             dependencies: [
+                "WaniKaniComposableClient",
                 "WaniKaniHelpers",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -121,10 +128,21 @@ let package = Package(
             ]
         ),
         .target(
+            name: "SubjectClient",
+            dependencies: [
+                "WaniKaniComposableClient",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "WaniKani", package: "wanikani-swift")
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
             name: "Subjects",
             dependencies: [
                 "WaniKaniHelpers",
-                .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
+                .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -143,9 +161,18 @@ let package = Package(
             ]
         ),
         .target(
-            name: "WaniKaniHelpers",
+            name: "WaniKaniComposableClient",
             dependencies: [
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
+                .product(name: "WaniKani", package: "wanikani-swift")
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "WaniKaniHelpers",
+            dependencies: [
                 .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [

@@ -1,6 +1,5 @@
 import Foundation
 import Security
-import WaniKaniHelpers
 
 public enum Keychain {
     public enum Error: Swift.Error, Equatable {

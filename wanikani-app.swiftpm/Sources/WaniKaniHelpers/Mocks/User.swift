@@ -1,4 +1,5 @@
 import Foundation
+import WaniKani
 
 #if DEBUG
 extension User {

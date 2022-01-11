@@ -1,5 +1,6 @@
 import ComposableArchitecture
-import WaniKaniHelpers
+import WaniKani
+import WaniKaniComposableClient
 
 public struct SubjectClient {
     public var get: (Subject.ID) -> Effect<Subject?, Error>

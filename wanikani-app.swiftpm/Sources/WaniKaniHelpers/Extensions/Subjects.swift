@@ -1,4 +1,3 @@
-import ComposableArchitecture
 import WaniKani
 
 extension ModelCollection where Element == Subject {
