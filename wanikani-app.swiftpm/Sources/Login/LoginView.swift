@@ -1,25 +1,37 @@
 import AuthenticationClient
 import ComposableArchitecture
-import Home
 import SwiftUI
+import WaniKani
 import WaniKaniComposableClient
 
-public struct LoginState: Equatable {
-    public var alert: AlertState<LoginAction>?
-    public var token = ""
-    public var isTokenValid = false
-    public var isLoginRequestInFlight = false
-    public var home: HomeState?
-
-    public init() {}
+public enum LoginState: Equatable {
+    case restoreSession(RestoreSessionState)
+    case usernamePassword(UsernamePasswordState)
+    case createAccessToken(CreateAccessTokenState)
 }
 
 public enum LoginAction: Equatable {
-    case tokenChanged(String)
-    case alertDismissed
-    case loginButtonTapped
-    case loginResponse(Result<AuthenticationResponse, AuthenticationError>)
-    case home(HomeAction)
+    case restoreSession(RestoreSessionAction)
+    case usernamePassword(UsernamePasswordAction)
+    case createAccessToken(CreateAccessTokenAction)
+    case authenticated(Result<User, Error>)
+
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        switch (lhs, rhs) {
+        case (.restoreSession(let a), .restoreSession(let b)):
+            return a == b
+        case (.usernamePassword(let a), .usernamePassword(let b)):
+            return a == b
+        case (.createAccessToken(let a), .createAccessToken(let b)):
+            return a == b
+        case (.authenticated(.success), .authenticated(.success)),
+            (.authenticated(.failure), .authenticated(.failure)):
+            return true
+        default:
+            return false
+        }
+    }
+
 }
 
 public struct LoginEnvironment {
@@ -38,36 +50,57 @@ public struct LoginEnvironment {
     }
 }
 
-public let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment> { state, action, environment in
-    switch action {
-    case .tokenChanged(let token):
-        state.token = token
-        state.isTokenValid = !state.token.isEmpty
-        return .none
-    case .alertDismissed:
-        state.alert = nil
-        return .none
-    case .loginButtonTapped:
-        state.isLoginRequestInFlight = true
-        return environment
-            .authenticationClient
-            .login(LoginRequest(token: state.token), environment.wanikaniClient)
-            .receive(on: environment.mainQueue)
-            .catchToEffect {
-                LoginAction.loginResponse($0.mapError { $0 as! AuthenticationError })
+public let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment>
+    .combine(
+        restoreSessionReducer
+            .pullback(
+                state: /LoginState.restoreSession,
+                action: /LoginAction.restoreSession,
+                environment: { $0 }
+            ),
+        usernamePasswordReducer
+            .pullback(
+                state: /LoginState.usernamePassword,
+                action: /LoginAction.usernamePassword,
+                environment: { $0 }
+            ),
+        createAccessTokenReducer
+            .pullback(
+                state: /LoginState.createAccessToken,
+                action: /LoginAction.createAccessToken,
+                environment: { $0 }
+            ),
+        Reducer { state, action, environment in
+            switch action {
+            case .restoreSession(.response(.success(.authenticated(let response)))),
+                 .usernamePassword(.response(.success(.authenticated(let response)))),
+                 .createAccessToken(.response(.success(.authenticated(let response)))):
+                return environment
+                    .wanikaniClient
+                    .setToken(response.accessToken)
+                    .flatMap {
+                        environment.wanikaniClient.me()
+                    }
+                    .receive(on: environment.mainQueue)
+                    .catchToEffect(LoginAction.authenticated)
+            case .restoreSession(.response(.success(.needsAccessToken(let request)))),
+                .usernamePassword(.response(.success(.needsAccessToken(let request)))):
+                state = .createAccessToken(.init(request: request))
+                return .none
+            case .restoreSession(.response(.success(.noSession))), .restoreSession(.response(.failure)):
+                state = .usernamePassword(.init())
+                return .none
+            case .restoreSession:
+                return .none
+            case .usernamePassword:
+                return .none
+            case .createAccessToken:
+                return .none
+            case .authenticated:
+                return .none
             }
-    case .loginResponse(.success(let response)):
-        state.isLoginRequestInFlight = false
-        state.home = HomeState(user: response.user)
-        return .none
-    case .loginResponse(.failure(let error)):
-        state.alert = .init(title: TextState(error.localizedDescription))
-        state.isLoginRequestInFlight = false
-        return .none
-    case .home:
-        return .none
-    }
-}
+        }
+    )
 
 public struct LoginView: View {
     let store: Store<LoginState, LoginAction>
@@ -79,44 +112,21 @@ public struct LoginView: View {
     }
 
     public var body: some View {
-        WithViewStore(store) { viewStore in
-            ScrollView {
-                VStack(spacing: 16) {
-                    Text(
-                        """
-                        This application requires a WaniKani access token. Please provide one with the appropriate scopes.
-                        """
-                    )
-
-                    SecureField(
-                        "access token",
-                        text: viewStore.binding(get: \.token, send: LoginAction.tokenChanged)
-                    )
-                    .textFieldStyle(.roundedBorder)
-
-                    NavigationLink(
-                        destination: IfLetStore(
-                            store.scope(state: \.home, action: LoginAction.home),
-                            then: HomeView.init(store:)
-                        ),
-                        isActive: viewStore.binding(
-                            get: { $0.home != nil },
-                            send: .loginButtonTapped
-                        )
-                    ) {
-                        Text("Log In")
-
-                        if viewStore.isLoginRequestInFlight {
-                            ProgressView()
-                        }
-                    }
-                    .disabled(!viewStore.isTokenValid)
-                }
-                .disabled(viewStore.isLoginRequestInFlight)
-                .padding(.horizontal)
+        SwitchStore(store) {
+            CaseLet(state: /LoginState.restoreSession, action: LoginAction.restoreSession) { store in
+                RestoreSessionView(store: store)
+                    .navigationTitle("")
             }
-            .navigationTitle("Login")
-            .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
+            CaseLet(state: /LoginState.usernamePassword, action: LoginAction.usernamePassword) { store in
+                ScrollView {
+                    UsernamePasswordView(store: store)
+                        .navigationTitle("Login")
+                }
+            }
+            CaseLet(state: /LoginState.createAccessToken, action: LoginAction.createAccessToken) { store in
+                CreateAccessTokenView(store: store)
+                    .navigationTitle("Create Access Token")
+            }
         }
     }
 }
@@ -126,7 +136,7 @@ struct LoginView_Previews: PreviewProvider {
         NavigationView {
             LoginView(
                 store: Store(
-                    initialState: .init(),
+                    initialState: .usernamePassword(.init()),
                     reducer: loginReducer,
                     environment: .init(
                         wanikaniClient: .testing,

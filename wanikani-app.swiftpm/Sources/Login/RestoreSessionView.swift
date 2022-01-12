@@ -1,8 +1,6 @@
 import AuthenticationClient
 import ComposableArchitecture
-import Home
 import SwiftUI
-import WaniKaniComposableClient
 
 public struct RestoreSessionState: Equatable {
     public init() {}
@@ -10,13 +8,13 @@ public struct RestoreSessionState: Equatable {
 
 public enum RestoreSessionAction: Equatable {
     case onAppear
-    case restoreSession(Result<AuthenticationResponse, Error>)
+    case response(Result<AuthenticationAction, Error>)
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
         case (.onAppear, .onAppear),
-            (.restoreSession(.success), .restoreSession(.success)),
-            (.restoreSession(.failure), .restoreSession(.failure)):
+            (.response(.success), .response(.success)),
+            (.response(.failure), .response(.failure)):
             return true
         default:
             return false
@@ -24,36 +22,19 @@ public enum RestoreSessionAction: Equatable {
     }
 }
 
-public struct RestoreSessionEnvironment {
-    public var wanikaniClient: WaniKaniComposableClient
-    public var authenticationClient: AuthenticationClient
-    public var mainQueue: AnySchedulerOf<DispatchQueue>
-
-    public init(
-        wanikaniClient: WaniKaniComposableClient,
-        authenticationClient: AuthenticationClient,
-        mainQueue: AnySchedulerOf<DispatchQueue>
-    ) {
-        self.wanikaniClient = wanikaniClient
-        self.authenticationClient = authenticationClient
-        self.mainQueue = mainQueue
-    }
-}
-
-public let restoreSessionReducer = Reducer<RestoreSessionState, RestoreSessionAction, RestoreSessionEnvironment> {
-    _,
-    action,
-    environment in
+public let restoreSessionReducer = Reducer<
+    RestoreSessionState, 
+    RestoreSessionAction, 
+    LoginEnvironment
+> { state, action, environment in
     switch action {
     case .onAppear:
-        return environment.authenticationClient
-            .login(
-                LoginRequest(token: nil, storeValidTokenInKeychain: false),
-                environment.wanikaniClient
-            )
+        return environment
+            .authenticationClient
+            .restoreSession()
             .receive(on: environment.mainQueue)
-            .catchToEffect(RestoreSessionAction.restoreSession)
-    case .restoreSession:
+            .catchToEffect(RestoreSessionAction.response)
+    case .response:
         return .none
     }
 }
@@ -61,9 +42,7 @@ public let restoreSessionReducer = Reducer<RestoreSessionState, RestoreSessionAc
 public struct RestoreSessionView: View {
     let store: Store<RestoreSessionState, RestoreSessionAction>
 
-    public init(
-        store: Store<RestoreSessionState, RestoreSessionAction>
-    ) {
+    public init(store: Store<RestoreSessionState, RestoreSessionAction>) {
         self.store = store
     }
 

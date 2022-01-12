@@ -4,7 +4,7 @@ import WaniKani
 
 public struct WaniKaniComposableClient {
     // MARK: Authorization
-    public var authorize: (String?) -> Effect<User, Error>
+    public var setToken: (String?) -> Effect<Void, Never>
 
     // MARK: Endpoints
     public var listAssignments: (Assignments.List, PageOptions?) -> Effect<Assignments.List.Content, Error>
@@ -39,7 +39,7 @@ public struct WaniKaniComposableClient {
 
     // MARK: Initializer
     public init(
-        authorize: @escaping (String?) -> Effect<User, Error>,
+        setToken: @escaping (String?) -> Effect<Void, Never>,
         listAssignments: @escaping (Assignments.List, PageOptions?) -> Effect<Assignments.List.Content, Error>,
         getAssignment: @escaping (Assignments.Get) -> Effect<Assignments.Get.Content, Error>,
         startAssignment: @escaping (Assignments.Start) -> Effect<Assignments.Start.Content, Error>,
@@ -76,7 +76,7 @@ public struct WaniKaniComposableClient {
         listVoiceActors: @escaping (VoiceActors.List, PageOptions?) -> Effect<VoiceActors.List.Content, Error>,
         getVoiceActor: @escaping (VoiceActors.Get) -> Effect<VoiceActors.Get.Content, Error>
     ) {
-        self.authorize = authorize
+        self.setToken = setToken
         self.listAssignments = listAssignments
         self.getAssignment = getAssignment
         self.startAssignment = startAssignment

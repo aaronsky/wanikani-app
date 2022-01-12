@@ -6,11 +6,9 @@ extension WaniKaniComposableClient {
         let client = LiveClient()
 
         return Self(
-            authorize: { token in
-                let oldValue = client.token
-                client.token = token
-
-                return client.send(.me)
+            setToken: {
+                client.token = $0
+                return Effect(value: ())
             },
             listAssignments: client.send,
             getAssignment: client.send,

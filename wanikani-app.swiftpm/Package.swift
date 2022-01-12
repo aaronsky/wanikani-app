@@ -65,8 +65,6 @@ let package = Package(
         .target(
             name: "AuthenticationClient",
             dependencies: [
-                "WaniKaniComposableClient",
-                "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift")
             ],
@@ -142,6 +140,7 @@ let package = Package(
             name: "Subjects",
             dependencies: [
                 "WaniKaniHelpers",
+                .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift")
             ],
             swiftSettings: [

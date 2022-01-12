@@ -3,7 +3,7 @@ import WaniKani
 
 extension WaniKaniComposableClient {
     public static let testing = Self(
-        authorize: { _ in .none },
+        setToken: { _ in .none },
         listAssignments: { _, _ in .none },
         getAssignment: { _ in .none },
         startAssignment: { _ in .none },

@@ -1,6 +1,7 @@
 import ComposableArchitecture
 import Profile
 import SubjectClient
+import Subjects
 import SwiftUI
 import WaniKani
 import WaniKaniComposableClient
@@ -16,8 +17,9 @@ public struct HomeState: Equatable {
     public var user: User
     public var summary: Summary?
     public var assignments: [Assignment] = []
-    public var subjects: [SubjectsPurpose: [Subject]] = [:]
+    public var subjectGroups: [SubjectsPurpose: [Subject]] = [:]
     public var profile: ProfileState?
+    public var subjects: SubjectsState?
 
     public init(
         user: User
@@ -35,14 +37,23 @@ public enum HomeAction: Equatable {
     case profileButtonTapped
     case profile(ProfileAction)
     case profileDismissed
+    case subjects(SubjectsAction)
     case startReviewsButtonTapped
     case alertDismissed
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
-        case (.getSummaryResponse, .getSummaryResponse),
+        case (.onAppear, .onAppear),
+            (.refresh, .refresh),
+            (.getSummaryResponse, .getSummaryResponse),
+            (.getAssignmentsResponse, .getAssignmentsResponse),
+            (.getSubjectResponse, .getSubjectResponse),
             (.profileButtonTapped, .profileButtonTapped),
-            (.startReviewsButtonTapped, .startReviewsButtonTapped):
+            (.profile, .profile),
+            (.profileDismissed, .profileDismissed),
+            (.subjects, .subjects),
+            (.startReviewsButtonTapped, .startReviewsButtonTapped),
+            (.alertDismissed, .alertDismissed):
             return true
         default:
             return false
@@ -78,6 +89,15 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                         wanikaniClient: $0.wanikaniClient,
                         mainQueue: $0.mainQueue
                     )
+                }
+            ),
+        subjectsReducer
+            .optional()
+            .pullback(
+                state: \.subjects,
+                action: /HomeAction.subjects,
+                environment: { _ in
+                    SubjectsEnvironment()
                 }
             ),
         Reducer { state, action, environment in
@@ -137,7 +157,7 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                 )
                 return .none
             case .getSubjectResponse(.success((let purpose, .some(let subject)))):
-                state.subjects[purpose, default: []].append(subject)
+                state.subjectGroups[purpose, default: []].append(subject)
                 return .none
             case .getSubjectResponse:
                 // no alert necessary here
@@ -145,10 +165,15 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
             case .profileButtonTapped:
                 state.profile = ProfileState(user: state.user)
                 return .none
+            case .profile(.logoutButtonTapped):
+                state.profile = nil
+                return .none
             case .profile:
                 return .none
             case .profileDismissed:
                 state.profile = nil
+                return .none
+            case .subjects:
                 return .none
             case .startReviewsButtonTapped:
                 return .none
@@ -173,6 +198,8 @@ public struct HomeView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     Section {
+                        Text("Welcome, \(viewStore.user.username)!")
+                            .font(.title.bold())
                         if let nextReviews = viewStore.summary?.nextReviews {
                             Text(
                                 "Your next review will be in \(nextReviews.formatted(.relative(presentation: .named)))"
@@ -190,7 +217,7 @@ public struct HomeView: View {
                     ) {
                         LessonsReviewsCard(
                             kind: .lessons,
-                            subjects: viewStore.subjects[.lessons, default: []],
+                            subjects: viewStore.subjectGroups[.lessons, default: []],
                             showUpcoming: true
                         )
                     }
@@ -200,7 +227,7 @@ public struct HomeView: View {
                     ) {
                         LessonsReviewsCard(
                             kind: .reviews,
-                            subjects: viewStore.subjects[.reviews, default: []],
+                            subjects: viewStore.subjectGroups[.reviews, default: []],
                             showUpcoming: false
                         )
                     }
@@ -209,7 +236,16 @@ public struct HomeView: View {
                         header: Text("More")
                             .font(.title3.bold())
                     ) {
-                        NavigationLink(destination: EmptyView()) {
+
+                        NavigationLink(
+                            destination: IfLetStore(
+                                store.scope(
+                                    state: \.subjects,
+                                    action: HomeAction.subjects
+                                ),
+                                then: SubjectsView.init(store:)
+                            )
+                        ) {
                             Label("Subjects", systemImage: "gear")
                         }
                         NavigationLink(destination: EmptyView()) {
@@ -222,7 +258,8 @@ public struct HomeView: View {
                 }
                 .padding(.horizontal)
             }
-            .navigationTitle("Welcome, \(viewStore.user.username)!")
+            .navigationTitle("Home")
+            .navigationBarTitleDisplayMode(.inline)
             .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
             .sheet(
                 isPresented: viewStore.binding(

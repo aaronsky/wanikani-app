@@ -7,19 +7,18 @@ import SwiftUI
 import WaniKaniComposableClient
 
 public enum AppState: Equatable {
-    case restoreSession(RestoreSessionState)
     case login(LoginState)
     case home(HomeState)
 
     public init() {
-        self = .restoreSession(.init())
+        self = .login(.restoreSession(.init()))
     }
 }
 
 public enum AppAction: Equatable {
-    case restoreSession(RestoreSessionAction)
     case login(LoginAction)
     case home(HomeAction)
+    case logout
     case scenePhaseChanged(ScenePhase)
     case openURL(URL)
 }
@@ -45,18 +44,6 @@ public struct AppEnvironment {
 
 public let appReducer = Reducer<AppState, AppAction, AppEnvironment>
     .combine(
-        restoreSessionReducer
-            .pullback(
-                state: /AppState.restoreSession,
-                action: /AppAction.restoreSession,
-                environment: {
-                    RestoreSessionEnvironment(
-                        wanikaniClient: $0.wanikaniClient,
-                        authenticationClient: $0.authenticationClient,
-                        mainQueue: $0.mainQueue
-                    )
-                }
-            ),
         loginReducer
             .pullback(
                 state: /AppState.login,
@@ -83,27 +70,31 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>
             ),
         Reducer { state, action, environment in
             switch action {
-            case .restoreSession(.restoreSession(.success(let response))):
-                state = .home(HomeState(user: response.user))
-                return environment.subjects
-                    .update(environment.wanikaniClient)
-                    .receive(on: environment.mainQueue)
-                    .fireAndForget()
-            case .restoreSession(.restoreSession(.failure(let error))):
-                print(error)
-                state = .login(.init())
-                return .none
-            case .restoreSession:
-                return .none
-            case .login(.loginResponse(.success(let response))):
-                state = .home(HomeState(user: response.user))
+            case .login(.authenticated(.success(let user))):
+                state = .home(HomeState(user: user))
                 return environment.subjects
                     .update(environment.wanikaniClient)
                     .receive(on: environment.mainQueue)
                     .fireAndForget()
             case .login:
                 return .none
+            case .home(.profile(.logoutButtonTapped)):
+                return Effect.merge(
+                    environment
+                        .authenticationClient
+                        .logout()
+                        .catchToEffect { _ in () },
+                    environment
+                        .wanikaniClient
+                        .setToken(nil)
+                )
+                    .receive(on: environment.mainQueue)
+                    .map { _ in AppAction.logout }
+                    .eraseToEffect()
             case .home:
+                return .none
+            case .logout:
+                state = .login(.usernamePassword(.init()))
                 return .none
             case .scenePhaseChanged(.background):
                 return environment.subjects.save.fireAndForget()
@@ -127,9 +118,6 @@ public struct AppView: View {
 
     public var body: some View {
         SwitchStore(store) {
-            CaseLet(state: /AppState.restoreSession, action: AppAction.restoreSession) { store in
-                RestoreSessionView(store: store)
-            }
             CaseLet(state: /AppState.login, action: AppAction.login) { store in
                 NavigationView {
                     LoginView(store: store)

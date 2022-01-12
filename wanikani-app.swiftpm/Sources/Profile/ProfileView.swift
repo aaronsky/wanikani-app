@@ -46,6 +46,7 @@ public enum ProfileAction: BindableAction, Equatable {
     case getVoiceActorsResponse(Result<Response<VoiceActors.List>.Content, Error>)
     case updateUserResponse(Result<Response<Users.Update>.Content, Error>)
     case alertDismissed
+    case logoutButtonTapped
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
@@ -53,7 +54,9 @@ public enum ProfileAction: BindableAction, Equatable {
             (.getVoiceActorsResponse(.success), .getVoiceActorsResponse(.success)),
             (.getVoiceActorsResponse(.failure), .getVoiceActorsResponse(.failure)),
             (.updateUserResponse(.success), .updateUserResponse(.success)),
-            (.updateUserResponse(.failure), .updateUserResponse(.failure)):
+            (.updateUserResponse(.failure), .updateUserResponse(.failure)),
+            (.alertDismissed, .alertDismissed),
+            (.logoutButtonTapped, .logoutButtonTapped):
             return true
         case (.binding(let a), .binding(let b)):
             return a == b
@@ -146,6 +149,8 @@ public let profileReducer = Reducer<ProfileState, ProfileAction, ProfileEnvironm
     case .alertDismissed:
         state.alert = nil
         return .none
+    case .logoutButtonTapped:
+        return .none
     }
 }
 .binding()
@@ -211,6 +216,18 @@ public struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(
+                        action: {
+                            viewStore.send(.logoutButtonTapped)
+                        },
+                        label: {
+                            Text("Sign out")
+                        }
+                    )
+                }
+            }
             .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
             .onAppear {
                 viewStore.send(.onAppear)
