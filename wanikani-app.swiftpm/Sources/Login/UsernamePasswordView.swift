@@ -150,7 +150,6 @@ public struct UsernamePasswordView: View {
             .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
             .synchronize(
                 viewStore.binding(\.$focusedField),
-                //                viewStore.binding(keyPath: \.focusedField, send: UsernamePasswordAction.binding),
                 self.$focusedField
             )
         }

@@ -35,6 +35,7 @@ let package = Package(
         )
     ],
     dependencies: [
+        .package(url: "https://github.com/scinfu/SwiftSoup", "2.3.6"..<"3.0.0"),
         .package(url: "https://github.com/aaronsky/wanikani-swift", "0.0.2"..<"1.0.0"),
         .package(url: "https://github.com/pointfreeco/swift-composable-architecture", "0.32.0"..<"1.0.0")
     ],
@@ -65,6 +66,7 @@ let package = Package(
         .target(
             name: "AuthenticationClient",
             dependencies: [
+                "HTML",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift")
             ],
@@ -84,6 +86,15 @@ let package = Package(
                 "WaniKaniHelpers",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture"),
                 .product(name: "WaniKani", package: "wanikani-swift")
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "HTML",
+            dependencies: [
+                .product(name: "SwiftSoup", package: "swiftsoup")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

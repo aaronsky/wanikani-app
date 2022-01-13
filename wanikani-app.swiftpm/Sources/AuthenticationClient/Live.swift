@@ -1,5 +1,6 @@
 import ComposableArchitecture
 import Foundation
+import HTML
 
 extension AuthenticationClient {
     public static let live: AuthenticationClient = .init(
@@ -73,7 +74,13 @@ extension AuthenticationClient {
         req.httpShouldHandleCookies = true
 
         let (data, _) = try await session.data(for: req)
-        let csrfToken = HTML(data: data)!.csrfToken!  // FIXME: extract BUT NOT WITH REGEX
+
+        guard let doc = try? html(data: data, encoding: .utf8),
+            let csrfToken = try? doc.csrfToken
+        else {
+            throw AuthenticationError.csrfTokenNotFound
+        }
+
         firstCookie = try session.wanikaniSessionCookie
 
         req = URLRequest(url: loginURL)
@@ -105,7 +112,13 @@ extension AuthenticationClient {
 
         let (data, _) = try await URLSession.shared.data(for: req)
 
-        return HTML(data: data)!.emailAddress!  // FIXME: extract BUT NOT WITH REGEX
+        guard let doc = try? html(data: data, encoding: .utf8),
+            let emailAddress = try? doc.emailAddress
+        else {
+            throw AuthenticationError.emailNotFound
+        }
+
+        return emailAddress
     }
 
     private static func getAccessToken(cookie: String) async throws -> String? {
@@ -114,7 +127,13 @@ extension AuthenticationClient {
 
         let (data, _) = try await URLSession.shared.data(for: req)
 
-        return HTML(data: data)?.accessToken  // FIXME: extract BUT NOT WITH REGEX
+        guard let doc = try? html(data: data, encoding: .utf8),
+            let accessToken = try? doc.accessToken(for: appName)
+        else {
+            throw AuthenticationError.accessTokenNotFound
+        }
+
+        return accessToken
     }
 
     private static func createNewAccessToken(request: AccessTokenRequest) async throws -> String {
@@ -122,7 +141,12 @@ extension AuthenticationClient {
         req.authorize(request.cookie)
 
         var (data, _) = try await URLSession.shared.data(for: req)
-        let csrfToken = HTML(data: data)!.csrfToken  // FIXME: extract BUT NOT WITH REGEX
+
+        guard let doc = try? html(data: data, encoding: .utf8),
+            let csrfToken = try? doc.csrfToken
+        else {
+            throw AuthenticationError.csrfTokenNotFound
+        }
 
         var queryItems: [URLQueryItem] = [
             URLQueryItem(name: "personal_access_token[description]", value: appName),
@@ -156,7 +180,9 @@ extension AuthenticationClient {
 
         (data, _) = try await URLSession.shared.data(for: req)
 
-        guard let accessToken = HTML(data: data)?.accessToken else {  // FIXME: extract BUT NOT WITH REGEX
+        guard let doc = try? html(data: data, encoding: .utf8),
+            let accessToken = try? doc.accessToken(for: appName)
+        else {
             throw AuthenticationError.accessTokenNotFound
         }
 
@@ -176,17 +202,17 @@ private let wanikaniSessionCookieName = "_wanikani_session"
 // MARK: - Extensions
 
 extension CharacterSet {
-    fileprivate static let rfc3986Unreserved = CharacterSet(
+    static let rfc3986Unreserved = CharacterSet(
         charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
     )
 }
 
 extension URLRequest {
-    fileprivate mutating func authorize(_ cookie: String) {
+    mutating func authorize(_ cookie: String) {
         addValue("\(wanikaniSessionCookieName)=\(cookie)", forHTTPHeaderField: "Cookie")
     }
 
-    fileprivate mutating func setFormBody(method: String, queryItems: [URLQueryItem] = []) {
+    mutating func setFormBody(method: String, queryItems: [URLQueryItem] = []) {
         httpMethod = method
 
         httpBody =
@@ -212,70 +238,13 @@ extension URLRequest {
 }
 
 extension URLSession {
-    fileprivate var wanikaniSessionCookie: String {
-        get throws {
-            guard let cookies = configuration.httpCookieStorage?.cookies,
-                  let cookie = cookies.first(where: { $0.name == wanikaniSessionCookieName })
-            else {
-                throw AuthenticationError.sessionCookieNotSet
-            }
-
-            return cookie.value
-        }
-    }
-}
-
-// FIXME: Do not parse HTML with Regex, you'll welcome Zalgo into your home
-private struct HTML {
-    private static let csrfTokenPattern = try! NSRegularExpression(
-        pattern: #"<meta name="csrf-token" content="([^"]*)"#
-    )
-    private static let accessTokenPattern = try! NSRegularExpression(
-        pattern:
-            #"personal-access-token-description">\s*\#(appName)\s*</td>\s*<td class="personal-access-token-token">\s*<code>([a-f0-9-]{36})</code>"#
-    )
-    private static let emailAddressPattern = try! NSRegularExpression(
-        pattern: #"<input[^>]+value="([^"]+)"[^>]+id="user_email""#
-    )
-
-    private var string: String
-
-    var csrfToken: String? {
-        firstMatch(pattern: Self.csrfTokenPattern)
-    }
-
-    var accessToken: String? {
-        firstMatch(pattern: Self.accessTokenPattern)
-    }
-
-    var emailAddress: String? {
-        firstMatch(pattern: Self.emailAddressPattern)
-    }
-
-    init?(
-        data: Data
-    ) {
-        guard let string = String(data: data, encoding: .utf8) else {
-            return nil
-        }
-
-        self.string = string
-    }
-
-    private func firstMatch(pattern: NSRegularExpression) -> String? {
-        guard
-            let match = pattern.firstMatch(
-                in: string,
-                range: NSRange(
-                    string.startIndex...,
-                    in: string
-                )
-            ),
-            let range = Range(match.range(at: 1), in: string)
+    var wanikaniSessionCookie: String {
+        guard let cookies = configuration.httpCookieStorage?.cookies,
+            let cookie = cookies.first(where: { $0.name == wanikaniSessionCookieName })
         else {
-            return nil
+            throw AuthenticationError.sessionCookieNotSet
         }
 
-        return String(string[range])
+        return cookie.value
     }
 }

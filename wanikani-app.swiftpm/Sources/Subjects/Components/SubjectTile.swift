@@ -47,7 +47,6 @@ public struct SubjectTile: View {
             )
             .padding(5)
             .background(kind.color)
-            // .foregroundColor(png.color)
             .shadow(radius: 1, y: 1)
         }
     }
