@@ -239,12 +239,14 @@ extension URLRequest {
 
 extension URLSession {
     var wanikaniSessionCookie: String {
-        guard let cookies = configuration.httpCookieStorage?.cookies,
-            let cookie = cookies.first(where: { $0.name == wanikaniSessionCookieName })
-        else {
-            throw AuthenticationError.sessionCookieNotSet
-        }
+        get throws {
+            guard let cookies = configuration.httpCookieStorage?.cookies,
+                  let cookie = cookies.first(where: { $0.name == wanikaniSessionCookieName })
+            else {
+                throw AuthenticationError.sessionCookieNotSet
+            }
 
-        return cookie.value
+            return cookie.value
+        }
     }
 }
