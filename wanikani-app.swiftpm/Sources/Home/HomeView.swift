@@ -40,6 +40,7 @@ public enum HomeAction: Equatable {
     case subjects(SubjectsAction)
     case startReviewsButtonTapped
     case alertDismissed
+    case logout
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
@@ -172,13 +173,15 @@ public let homeReducer = Reducer<HomeState, HomeAction, HomeEnvironment>
                 return .none
             case .profileDismissed:
                 state.profile = nil
-                return .none
+                return Effect(value: HomeAction.logout)
             case .subjects:
                 return .none
             case .startReviewsButtonTapped:
                 return .none
             case .alertDismissed:
                 state.alert = nil
+                return .none
+            case .logout:
                 return .none
             }
         }

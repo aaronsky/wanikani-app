@@ -23,8 +23,8 @@ public enum RestoreSessionAction: Equatable {
 }
 
 public let restoreSessionReducer = Reducer<
-    RestoreSessionState, 
-    RestoreSessionAction, 
+    RestoreSessionState,
+    RestoreSessionAction,
     LoginEnvironment
 > { state, action, environment in
     switch action {
@@ -42,7 +42,9 @@ public let restoreSessionReducer = Reducer<
 public struct RestoreSessionView: View {
     let store: Store<RestoreSessionState, RestoreSessionAction>
 
-    public init(store: Store<RestoreSessionState, RestoreSessionAction>) {
+    public init(
+        store: Store<RestoreSessionState, RestoreSessionAction>
+    ) {
         self.store = store
     }
 

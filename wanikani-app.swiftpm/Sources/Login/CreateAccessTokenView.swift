@@ -96,17 +96,22 @@ public let createAccessTokenReducer = Reducer<
 public struct CreateAccessTokenView: View {
     let store: Store<CreateAccessTokenState, CreateAccessTokenAction>
 
-    public init(store: Store<CreateAccessTokenState, CreateAccessTokenAction>) {
+    public init(
+        store: Store<CreateAccessTokenState, CreateAccessTokenAction>
+    ) {
         self.store = store
     }
 
     public var body: some View {
         WithViewStore(store) { viewStore in
             Form {
-                Text("Start Assignments")
-                    .font(.caption)
-                Section {
+                Section(header: Text("Set Permissions")) {
+                    Text("you can update these later")
                     Toggle("Start Assignments", isOn: viewStore.binding(\.$permissionStartAssignments))
+                    Toggle("Create Reviews", isOn: viewStore.binding(\.$permissionCreateReviews))
+                    Toggle("Create Study Materials", isOn: viewStore.binding(\.$permissionCreateStudyMaterials))
+                    Toggle("Update Study Materials", isOn: viewStore.binding(\.$permissionUpdateStudyMaterials))
+                    Toggle("Update User Preferences", isOn: viewStore.binding(\.$permissionUpdateUser))
                 }
                 Section {
                     Button(
@@ -115,6 +120,10 @@ public struct CreateAccessTokenView: View {
                         },
                         label: {
                             Text("Create Access Token")
+
+                            if viewStore.isRequestInFlight {
+                                ProgressView()
+                            }
                         }
                     )
                 }

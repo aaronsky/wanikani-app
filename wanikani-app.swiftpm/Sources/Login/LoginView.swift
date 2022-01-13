@@ -73,8 +73,8 @@ public let loginReducer = Reducer<LoginState, LoginAction, LoginEnvironment>
         Reducer { state, action, environment in
             switch action {
             case .restoreSession(.response(.success(.authenticated(let response)))),
-                 .usernamePassword(.response(.success(.authenticated(let response)))),
-                 .createAccessToken(.response(.success(.authenticated(let response)))):
+                .usernamePassword(.response(.success(.authenticated(let response)))),
+                .createAccessToken(.response(.success(.authenticated(let response)))):
                 return environment
                     .wanikaniClient
                     .setToken(response.accessToken)

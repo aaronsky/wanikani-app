@@ -100,6 +100,7 @@ let package = Package(
             dependencies: [
                 "AuthenticationClient",
                 "Home",
+                "SwiftUIHelpers",
                 "WaniKaniComposableClient",
                 .product(name: "ComposableArchitecture", package: "swift-composable-architecture")
             ],

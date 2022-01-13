@@ -94,7 +94,6 @@ public enum AuthenticationError: Equatable, LocalizedError {
     case emailNotFound
     case sessionCookieNotSet
     case invalidToken
-    case unnavigableDocumentTree
     case serviceUnavailable
     case unhandledWaniKaniError(WaniKani.Error)
     case keychainError(Keychain.Error)
@@ -126,8 +125,6 @@ public enum AuthenticationError: Equatable, LocalizedError {
             return "Session cookie not set"
         case .invalidToken:
             return "Unknown user access token"
-        case .unnavigableDocumentTree:
-            return "Unable to authenticate with WaniKani due to a schema change"
         case .serviceUnavailable:
             return "WaniKani is currently unavailable"
         case .unhandledWaniKaniError(let error):

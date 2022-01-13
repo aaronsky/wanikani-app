@@ -92,10 +92,8 @@ extension AuthenticationClient {
         let (_, response) = try await session.data(for: req)
         secondCookie = try session.wanikaniSessionCookie
 
-        if firstCookie == secondCookie {
+        guard firstCookie != secondCookie && response.url == dashboardURL else {
             throw AuthenticationError.badCredentials
-        } else if response.url != dashboardURL {
-            throw AuthenticationError.unnavigableDocumentTree
         }
 
         return secondCookie

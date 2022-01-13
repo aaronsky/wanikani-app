@@ -78,16 +78,17 @@ public let appReducer = Reducer<AppState, AppAction, AppEnvironment>
                     .fireAndForget()
             case .login:
                 return .none
-            case .home(.profile(.logoutButtonTapped)):
-                return Effect.merge(
-                    environment
-                        .authenticationClient
-                        .logout()
-                        .catchToEffect { _ in () },
-                    environment
-                        .wanikaniClient
-                        .setToken(nil)
-                )
+            case .home(.logout):
+                return
+                    Effect.merge(
+                        environment
+                            .authenticationClient
+                            .logout()
+                            .catchToEffect { _ in () },
+                        environment
+                            .wanikaniClient
+                            .setToken(nil)
+                    )
                     .receive(on: environment.mainQueue)
                     .map { _ in AppAction.logout }
                     .eraseToEffect()

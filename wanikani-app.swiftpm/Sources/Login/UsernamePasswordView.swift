@@ -1,11 +1,18 @@
 import AuthenticationClient
 import ComposableArchitecture
 import SwiftUI
+import SwiftUIHelpers
 
 public struct UsernamePasswordState: Equatable {
+    enum Field: String, Hashable {
+        case username, password
+    }
+
     @BindableState var username = ""
     @BindableState var password = ""
-    var showPasswordFieldText = false
+    @BindableState var focusedField: Field? = nil
+    @BindableState var showPasswordFieldText = false
+
     var canLogIn = false
     var isRequestInFlight = false
     var alert: AlertState<UsernamePasswordAction>?
@@ -16,14 +23,12 @@ public struct UsernamePasswordState: Equatable {
 public enum UsernamePasswordAction: BindableAction, Equatable {
     case alertDismissed
     case binding(BindingAction<UsernamePasswordState>)
-    case showHidePasswordFieldButtonTapped
     case loginButtonTapped
     case response(Result<AuthenticationAction, Error>)
 
     public static func == (lhs: Self, rhs: Self) -> Bool {
         switch (lhs, rhs) {
         case (.alertDismissed, .alertDismissed),
-            (.showHidePasswordFieldButtonTapped, .showHidePasswordFieldButtonTapped),
             (.loginButtonTapped, .loginButtonTapped),
             (.response(.success), .response(.success)),
             (.response(.failure), .response(.failure)):
@@ -37,8 +42,8 @@ public enum UsernamePasswordAction: BindableAction, Equatable {
 }
 
 public let usernamePasswordReducer = Reducer<
-    UsernamePasswordState, 
-    UsernamePasswordAction, 
+    UsernamePasswordState,
+    UsernamePasswordAction,
     LoginEnvironment
 > { state, action, environment in
     switch action {
@@ -52,9 +57,6 @@ public let usernamePasswordReducer = Reducer<
         state.canLogIn = !state.username.isEmpty && !state.password.isEmpty
         return .none
     case .binding:
-        return .none
-    case .showHidePasswordFieldButtonTapped:
-        state.showPasswordFieldText.toggle()
         return .none
     case .loginButtonTapped:
         state.isRequestInFlight = true
@@ -77,9 +79,13 @@ public let usernamePasswordReducer = Reducer<
 .binding()
 
 public struct UsernamePasswordView: View {
+    @FocusState var focusedField: UsernamePasswordState.Field?
+
     let store: Store<UsernamePasswordState, UsernamePasswordAction>
 
-    public init(store: Store<UsernamePasswordState, UsernamePasswordAction>) {
+    public init(
+        store: Store<UsernamePasswordState, UsernamePasswordAction>
+    ) {
         self.store = store
     }
 
@@ -98,6 +104,7 @@ public struct UsernamePasswordView: View {
                 )
                 .autocapitalization(.none)
                 .textFieldStyle(.roundedBorder)
+                .focused($focusedField, equals: .username)
 
                 HStack {
                     if viewStore.showPasswordFieldText {
@@ -106,25 +113,22 @@ public struct UsernamePasswordView: View {
                             text: viewStore.binding(\.$password)
                         )
                         .textFieldStyle(.roundedBorder)
+                        .focused($focusedField, equals: .password)
                     } else {
                         SecureField(
                             "Password",
                             text: viewStore.binding(\.$password)
                         )
                         .textFieldStyle(.roundedBorder)
+                        .focused($focusedField, equals: .password)
                     }
-                    Button(
-                        action: {
-                            viewStore.send(.showHidePasswordFieldButtonTapped)
-                        },
-                        label: {
-                            Label(
-                                viewStore.showPasswordFieldText ? "Hide password" : "Show password",
-                                systemImage: "eye"
-                            )
+                    Toggle(
+                        isOn: viewStore.binding(\.$showPasswordFieldText)
+                    ) {
+                        Label("Show Password", systemImage: "eye")
                             .labelStyle(.iconOnly)
-                        }
-                    )
+                    }
+                    .toggleStyle(.button)
                 }
 
                 Button(
@@ -144,6 +148,11 @@ public struct UsernamePasswordView: View {
             .padding(.horizontal)
             .disabled(viewStore.isRequestInFlight)
             .alert(store.scope(state: \.alert), dismiss: .alertDismissed)
+            .synchronize(
+                viewStore.binding(\.$focusedField),
+                //                viewStore.binding(keyPath: \.focusedField, send: UsernamePasswordAction.binding),
+                self.$focusedField
+            )
         }
     }
 }
